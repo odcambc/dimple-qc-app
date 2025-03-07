@@ -25,7 +25,10 @@ column_names_dict = {
     "percent_of_max_entropy_estimated": "Est. entropy % max",
     "insertions": "Insertion count",
     "deletions": "Deletion count",
+    "indel_fraction": "Indel fraction",
+    "indel_missense_ratio": "Indel to missense ratio",
     "alignment_mismatch": "Alignment mismatches",
+    "max_variant_base": "Max counts non-ref base",
 }
 
 column_colors_dict = {
@@ -38,7 +41,10 @@ column_colors_dict = {
     "percent_of_max_entropy_estimated": "#CC79A7",
     "insertions": "#E69F00",
     "deletions": "black",
+    "indel_fraction": "blue",
+    "indel_missense_ratio": "purple",
     "alignment_mismatch": "red",
+    "max_variant_base": "green",
 }
 
 # Store the selected upper and lower range for plotting
@@ -137,7 +143,65 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                     pos_plot.set_xlabel("Position")
                     pos_plot.set_ylabel(column_names_dict[last_selected_series.get()])
 
-                    return pos_plot
+                    # If show_means is selected, draw horizontal lines at means of last
+                    # selected series for the full range and selected range
+
+                    if input.show_means():
+                        if input.data_series():
+                            full_mean = processed_per_base_file()[
+                                last_selected_series.get()
+                            ].mean(skipna=True)
+                            selected_mean = (
+                                processed_per_base_file()
+                                .loc[
+                                    processed_per_base_file()["pos"].between(
+                                        selected_range_low.get(),
+                                        selected_range_high.get(),
+                                    ),
+                                    last_selected_series.get(),
+                                ]
+                                .mean(skipna=True)
+                            )
+
+                            pos_plot.axhline(
+                                float(full_mean),
+                                color=column_colors_dict[last_selected_series.get()],
+                                linestyle="solid",
+                            )
+                            pos_plot.axhline(
+                                float(selected_mean),
+                                color=column_colors_dict[last_selected_series.get()],
+                                linestyle="dashed",
+                            )
+                            # Add legend with correct line styles displayed
+                            from matplotlib.lines import Line2D
+
+                            legend_handles = [
+                                Line2D(
+                                    [0],
+                                    [0],
+                                    color=column_colors_dict[
+                                        last_selected_series.get()
+                                    ],
+                                    linestyle="solid",
+                                    label="Full range",
+                                ),
+                                Line2D(
+                                    [0],
+                                    [0],
+                                    color=column_colors_dict[
+                                        last_selected_series.get()
+                                    ],
+                                    linestyle="dashed",
+                                    label="Selected range",
+                                ),
+                            ]
+                            pos_plot.legend(
+                                handles=legend_handles,
+                                loc="upper right",
+                            )
+
+                        return pos_plot
 
                 with ui.layout_columns():
                     ui.input_action_button("zoom", "Zoom")
@@ -168,11 +232,12 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                     ]
 
                     return render.DataGrid(
-                        processed_per_base_file()[cols], filters=False
+                        pd.DataFrame(processed_per_base_file()[cols]), filters=False
                     )
 
         # Bottom 2D plots
         with ui.card(height=400):
+
             ui.card_header("Distributions")
 
             @render.plot
@@ -220,6 +285,8 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
     # Top summary fields
     with ui.card():
+        ui.input_switch("show_means", "Show means")
+
         with ui.value_box():
             "Average reads per base"
 
@@ -233,8 +300,10 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                     selected_range_low.get(), selected_range_high.get()
                 )
 
-                full_avg = df["reads_all"].mean()
-                range_avg = df[df["pos"].isin(selected_range)]["reads_all"].mean()
+                full_avg = df["reads_all"].mean(skipna=True)
+                range_avg = df.loc[df["pos"].isin(selected_range), "reads_all"].mean(
+                    skipna=True
+                )
 
                 return f"{int(full_avg)} ({int(range_avg)} in selected)"
 
@@ -256,8 +325,10 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
                 selected_series = last_selected_series.get()
 
-                full_avg = df[selected_series].mean()
-                range_avg = df[df["pos"].isin(selected_range)][selected_series].mean()
+                full_avg = df[selected_series].mean(skipna=True)
+                range_avg = df.loc[df["pos"].isin(selected_range)][
+                    selected_series
+                ].mean(skipna=True)
 
                 return f"{full_avg:.2f} ({range_avg:.2f} in selected)"
 
@@ -274,10 +345,10 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                     selected_range_low.get(), selected_range_high.get()
                 )
 
-                full_avg = df["entropy_without_max_value"].mean()
-                range_avg = df[df["pos"].isin(selected_range)][
+                full_avg = df["entropy_without_max_value"].mean(skipna=True)
+                range_avg = df.loc[df["pos"].isin(selected_range)][
                     "entropy_without_max_value"
-                ].mean()
+                ].mean(skipna=True)
 
                 return f"{full_avg:.2f} ({range_avg:.2f} in selected)"
 
@@ -293,8 +364,8 @@ def parsed_reference_fasta():
         if len(fasta_record) != 1:
             return None  # Only handle single-sequence FASTA files
         return str(fasta_record[0].seq)
-    except Exception as e:
-        return None  # Handle parsing errors gracefully
+    except Exception:
+        return None
 
 
 @reactive.calc
@@ -333,8 +404,28 @@ def processed_per_base_file():
     data["codon_number"] = data["pos"] // 3
 
     data["n_variants"] = data[["A", "C", "G", "T"]].apply(n_variants, axis=1)
+    data["n_indels"] = data[["insertions", "deletions"]].apply(n_observations, axis=1)
     data["n_total"] = data[["A", "C", "G", "T"]].apply(n_observations, axis=1)
-    data["variant_fraction"] = data["n_variants"] / data["reads_all"]
+
+    # Calculate ratios while avoiding division by zero
+
+    data["variant_fraction"] = (data["n_variants"] / data["reads_all"]).replace(
+        [np.inf, -np.inf], np.nan
+    )
+
+    data["indel_fraction"] = (data["n_indels"] / data["reads_all"]).replace(
+        [np.inf, -np.inf], np.nan
+    )
+
+    data["indel_missense_ratio"] = (data["n_indels"] / data["n_variants"]).replace(
+        [np.inf, -np.inf], np.nan
+    )
+
+    # Calculate the counts of the most common non-reference base
+
+    data["max_variant_base"] = data[["ref", "A", "C", "G", "T"]].apply(
+        max_non_ref_base, axis=1
+    )
 
     data["expected_variant_codons"] = subpool_codon_fraction * data["n_total"]
     data["estimated_wt_n"] = (
@@ -378,6 +469,14 @@ def n_variants(x):
 
 def n_observations(x):
     return sum(x)
+
+
+def max_non_ref_base(x):
+    ref = x["ref"]
+    non_ref_bases = [i for i in x[["A", "C", "G", "T"]] if i != x[ref]]
+    if non_ref_bases:
+        return max(non_ref_bases)
+    return 0
 
 
 # Reactive effects
@@ -467,7 +566,7 @@ def updated_selected_range():
 def updated_min_pos():
     selected_range_low.set(input.min_pos())
     ui.update_slider(
-        "selected_range", value=[selected_range_low.get(), selected_range_high.get()]
+        "selected_range", value=(selected_range_low.get(), selected_range_high.get())
     )
     ui.update_numeric("min_pos", value=selected_range_low.get())
 
@@ -477,7 +576,7 @@ def updated_min_pos():
 def updated_max_pos():
     selected_range_high.set(input.max_pos())
     ui.update_slider(
-        "selected_range", value=[selected_range_low.get(), selected_range_high.get()]
+        "selected_range", value=(selected_range_low.get(), selected_range_high.get())
     )
     ui.update_numeric("max_pos", value=selected_range_high.get())
 
