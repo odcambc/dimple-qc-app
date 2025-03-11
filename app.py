@@ -12,6 +12,8 @@ from shiny.types import FileInfo
 from Bio import SeqIO
 from Bio import pairwise2
 
+# from input_checkbox_group_tooltips import input_checkbox_group_tooltips
+
 ui.page_opts(title="DIMPLE quick QC", fillable=True)
 ui.include_css("./styles.css")
 
@@ -26,7 +28,7 @@ column_names_dict = {
     "insertions": "Insertion count",
     "deletions": "Deletion count",
     "indel_fraction": "Indel fraction",
-    "indel_missense_ratio": "Indel to missense ratio",
+    "indel_substitution_ratio": "Indel to substitution ratio",
     "alignment_mismatch": "Alignment mismatches",
     "max_variant_base": "Max counts non-ref base",
 }
@@ -42,9 +44,26 @@ column_colors_dict = {
     "insertions": "#E69F00",
     "deletions": "black",
     "indel_fraction": "blue",
-    "indel_missense_ratio": "purple",
+    "indel_substitution_ratio": "purple",
     "alignment_mismatch": "red",
     "max_variant_base": "green",
+}
+
+# Define the tooltips for each option
+column_tooltips = {
+    "entropy": "Shannon entropy, measuring sequence diversity.",
+    "entropy_without_max_value": "Effective entropy without dominant base.",
+    "n_total": "Total number of reads covering each position.",
+    "n_variants": "Number of variant reads at each position.",
+    "variant_fraction": "Proportion of variant reads at each position.",
+    "percent_of_max_entropy": "Entropy expressed as a percentage of max entropy.",
+    "percent_of_max_entropy_estimated": "Estimated max entropy percentage.",
+    "insertions": "Count of insertion mutations at each position.",
+    "deletions": "Count of deletion mutations at each position.",
+    "indel_fraction": "Fraction of reads with indels at each position.",
+    "indel_substitution_ratio": "Ratio of indels to substitutions at each position.",
+    "alignment_mismatch": "Indicates mismatches between reference and aligned sequence.",
+    "max_variant_base": "Counts of the most common non-reference base.",
 }
 
 # Store the selected upper and lower range for plotting
@@ -60,6 +79,57 @@ selected_range_high = reactive.value(100)
 
 # Store the last selected series for violin plots
 last_selected_series = reactive.value("entropy")
+
+# Custom CSS for tooltips
+ui.tags.style(
+    """
+.tooltip-container {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+
+.tooltip-container .tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background-color: black;
+    color: white;
+    text-align: center;
+    padding: 5px;
+    border-radius: 5px;
+
+    /* Positioning */
+    position: absolute;
+    z-index: 1;
+    bottom: 100%; /* Show above */
+    left: 50%;
+    transform: translateX(-50%);
+
+    /* Fade-in effect */
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tooltip-container:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+"""
+)
+
+
+# Create a checkbox with a tooltip at the end
+def checkbox_with_tooltip(key, names, tooltips):
+    return ui.tags.label(
+        names[key],
+        ui.tags.span(
+            " ❓",
+            ui.tags.span(tooltips[key], class_="tooltip-text"),
+            class_="tooltip-container",
+        ),
+        style="cursor: pointer;",
+    )
+
 
 # Sidebar layout
 with ui.sidebar(title="Settings"):
@@ -92,13 +162,15 @@ with ui.sidebar(title="Settings"):
                 value=selected_range_high.get(),
             )
 
-    # Data series selection
+    # Render the checkbox group with tooltips
     ui.input_checkbox_group(
         "data_series",
         "Display",
-        column_names_dict,
+        {
+            key: checkbox_with_tooltip(key, column_names_dict, column_tooltips)
+            for key in column_tooltips
+        },
     )
-
     # Input files
     ui.input_file(
         "per_base_file",
@@ -417,7 +489,7 @@ def processed_per_base_file():
         [np.inf, -np.inf], np.nan
     )
 
-    data["indel_missense_ratio"] = (data["n_indels"] / data["n_variants"]).replace(
+    data["indel_substitution_ratio"] = (data["n_indels"] / data["n_variants"]).replace(
         [np.inf, -np.inf], np.nan
     )
 
@@ -505,43 +577,7 @@ def update_data_selected_range():
 @reactive.effect
 @reactive.event(input.reference_fasta)
 def update_alignment():
-    if not parsed_reference_fasta():
-        return
-    # Align reference sequence optimally
-    ref_seq = parsed_reference_fasta()
-    if ref_seq:
-        df_ref_sequence = "".join(
-            processed_per_base_file()["ref"]
-        )  # Convert ref column to a string
-
-        # Perform global alignment (Needleman-Wunsch)
-        alignments = pairwise2.align.globalxx(
-            ref_seq, df_ref_sequence, one_alignment_only=True
-        )
-
-        if alignments:
-            best_alignment = alignments[0]  # Best alignment result
-            aligned_seq = list(best_alignment.seqA)  # Extract aligned reference
-
-            # Handle insertions/deletions (gap handling)
-            adjusted_aligned_seq = []
-            mismatch_count = 0
-
-            for i, (ref_base, df_base) in enumerate(zip(aligned_seq, df_ref_sequence)):
-                if ref_base == "-":  # Reference has an insertion
-                    adjusted_aligned_seq.append("-")  # Keep the gap
-                elif ref_base != df_base:
-                    adjusted_aligned_seq.append(f"[{ref_base}]")  # Mark mismatch
-                    mismatch_count += 1
-                else:
-                    adjusted_aligned_seq.append(ref_base)
-
-            processed_per_base_file()["aligned_ref"] = adjusted_aligned_seq
-
-            processed_per_base_file()["alignment_mismatch"] = [
-                1 if ref_base != df_base or ref_base == "-" else 0
-                for ref_base, df_base in zip(aligned_seq, df_ref_sequence)
-            ]
+    return
 
 
 # Dynamically update the max_pos input field when sequence_length updates
