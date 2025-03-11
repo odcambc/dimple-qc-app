@@ -12,6 +12,9 @@ from shiny.types import FileInfo
 from Bio import SeqIO
 from Bio import pairwise2
 
+from faicons import icon_svg
+
+
 # from input_checkbox_group_tooltips import input_checkbox_group_tooltips
 
 ui.page_opts(title="DIMPLE quick QC", fillable=True)
@@ -122,8 +125,9 @@ ui.tags.style(
 def checkbox_with_tooltip(key, names, tooltips):
     return ui.tags.label(
         names[key],
+        ui.tags.span(" ", style="margin-right: 5px;"),
         ui.tags.span(
-            " ❓",
+            icon_svg("circle-info", title=tooltips[key]),
             ui.tags.span(tooltips[key], class_="tooltip-text"),
             class_="tooltip-container",
         ),
