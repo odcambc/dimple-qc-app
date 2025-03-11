@@ -84,7 +84,7 @@ last_selected_series = reactive.value("entropy")
 ui.tags.style(
     """
 .tooltip-container {
-    position: relative;
+    position: absolute;
     display: inline-block;
     cursor: help;
 }
