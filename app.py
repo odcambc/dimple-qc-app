@@ -43,7 +43,7 @@ column_colors_dict = {
     "n_total": "#000000",
     "n_variants": "#F0E442",
     "variant_fraction": "#0072B2",
-    "variant_fraction_percent": "Variant fraction % expected",
+    "variant_fraction_percent": "green",
     "insertions": "#E69F00",
     "deletions": "black",
     "indel_fraction": "blue",
@@ -470,6 +470,8 @@ def processed_per_base_file():
 
     data["codon_number"] = data["pos"] // 3
 
+    data["is_selected"] = data["codon_number"].isin(selected_codon_range)
+
     data["n_variants"] = data[["A", "C", "G", "T"]].apply(n_variants, axis=1)
 
     data["n_indels"] = data[["insertions", "deletions"]].apply(n_observations, axis=1)
@@ -480,6 +482,10 @@ def processed_per_base_file():
     data["variant_fraction"] = (data["n_variants"] / data["reads_all"]).replace(
         [np.inf, -np.inf], np.nan
     )
+
+    data["variant_fraction_percent"] = (
+        (4 / 3) * data["variant_fraction"] / subpool_codon_fraction
+    ).replace([np.inf, -np.inf], np.nan)
 
     data["indel_fraction"] = (data["n_indels"] / data["reads_all"]).replace(
         [np.inf, -np.inf], np.nan
@@ -562,6 +568,10 @@ def update_data_selected_range():
     parsed_per_base_file()["expected_variant_codons"] = (
         subpool_codon_fraction * parsed_per_base_file()["n_total"]
     )
+
+    parsed_per_base_file()["variant_fraction_percent"] = (
+        (4 / 3) * parsed_per_base_file()["variant_fraction"] / subpool_codon_fraction
+    ).replace([np.inf, -np.inf], np.nan)
 
 
 # Update alignment when a reference sequence is uploaded
