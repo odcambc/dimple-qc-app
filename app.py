@@ -23,49 +23,47 @@ ui.include_css("./styles.css")
 column_names_dict = {
     "entropy": "Entropy",
     "entropy_without_max_value": "Effective entropy",
+    "percent_of_max_entropy": "Entropy % max",
     "n_total": "Total reads",
     "n_variants": "Variant reads",
     "variant_fraction": "Variant fraction",
-    "percent_of_max_entropy": "Entropy % max",
-    "percent_of_max_entropy_estimated": "Est. entropy % max",
+    "variant_fraction_percent": "Variant fraction % expected",
     "insertions": "Insertion count",
     "deletions": "Deletion count",
     "indel_fraction": "Indel fraction",
     "indel_substitution_ratio": "Indel to substitution ratio",
-    "alignment_mismatch": "Alignment mismatches",
+    "alignment_mismatch": "red",
     "max_variant_base": "Max counts non-ref base",
 }
 
 column_colors_dict = {
     "entropy": "#009E73",
     "entropy_without_max_value": "#56B4E9",
+    "percent_of_max_entropy": "#D55E00",
     "n_total": "#000000",
     "n_variants": "#F0E442",
     "variant_fraction": "#0072B2",
-    "percent_of_max_entropy": "#D55E00",
-    "percent_of_max_entropy_estimated": "#CC79A7",
+    "variant_fraction_percent": "Variant fraction % expected",
     "insertions": "#E69F00",
     "deletions": "black",
     "indel_fraction": "blue",
     "indel_substitution_ratio": "purple",
-    "alignment_mismatch": "red",
     "max_variant_base": "green",
 }
 
 # Define the tooltips for each option
 column_tooltips = {
-    "entropy": "Shannon entropy, measuring sequence diversity.",
-    "entropy_without_max_value": "Effective entropy without dominant base.",
+    "entropy": "Shannon entropy, measuring sequence diversity. Higher values indicate a more even distribution of bases.",
+    "entropy_without_max_value": "Entropy of non-reference (i.e., variant) reads. This value more accurately reflects the diversity of the variant library: it excludes the reference base counts, which are always expected to be the majority at any given position.",
+    "percent_of_max_entropy": "Fraction of maximum possible entropy at position. Values significantly below 1 indicate that the sequence diversity is lower than expected.",
     "n_total": "Total number of reads covering each position.",
     "n_variants": "Number of variant reads at each position.",
-    "variant_fraction": "Proportion of variant reads at each position.",
-    "percent_of_max_entropy": "Entropy expressed as a percentage of max entropy.",
-    "percent_of_max_entropy_estimated": "Estimated max entropy percentage.",
-    "insertions": "Count of insertion mutations at each position.",
-    "deletions": "Count of deletion mutations at each position.",
+    "variant_fraction": "Fraction of variant reads at each position.",
+    "variant_fraction_percent": "Fraction of expected variant reads at each position. Values below than 1 may suggest that the library contains a large amount of non-mutated sequences.",
+    "insertions": "Count of insertions at each position.",
+    "deletions": "Count of deletions at each position.",
     "indel_fraction": "Fraction of reads with indels at each position.",
     "indel_substitution_ratio": "Ratio of indels to substitutions at each position.",
-    "alignment_mismatch": "Indicates mismatches between reference and aligned sequence.",
     "max_variant_base": "Counts of the most common non-reference base.",
 }
 
@@ -87,7 +85,7 @@ last_selected_series = reactive.value("entropy")
 ui.tags.style(
     """
 .tooltip-container {
-    position: absolute;
+    position: relative;
     display: inline-block;
     cursor: help;
 }
@@ -137,18 +135,7 @@ def checkbox_with_tooltip(key, names, tooltips):
 
 # Sidebar layout
 with ui.sidebar(title="Settings"):
-
-    # Range selection
-    @render.ui
-    def range_slider():
-        return ui.input_slider(
-            "selected_range",
-            "Select range",
-            min=0,
-            max=sequence_length.get(),
-            value=[selected_range_low.get(), selected_range_high.get()],
-        )
-
+    "Selected range:"
     with ui.layout_columns():
 
         @render.ui
@@ -302,9 +289,13 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                         "variant_fraction",
                         "entropy",
                         "entropy_without_max_value",
-                        "estimated_entropy",
                         "percent_of_max_entropy",
-                        "percent_of_max_entropy_estimated",
+                        "insertions",
+                        "deletions",
+                        "indel_fraction",
+                        "indel_substitution_ratio",
+                        "alignment_mismatch",
+                        "max_variant_base",
                     ]
 
                     return render.DataGrid(
@@ -475,11 +466,12 @@ def processed_per_base_file():
 
     selected_codon_range = range(0, sequence_length.get() // 3)
 
-    subpool_codon_fraction = 3 / (len(selected_codon_range) + 1)
+    subpool_codon_fraction = 1 / (len(selected_codon_range) + 1)
 
     data["codon_number"] = data["pos"] // 3
 
     data["n_variants"] = data[["A", "C", "G", "T"]].apply(n_variants, axis=1)
+
     data["n_indels"] = data[["insertions", "deletions"]].apply(n_observations, axis=1)
     data["n_total"] = data[["A", "C", "G", "T"]].apply(n_observations, axis=1)
 
@@ -503,11 +495,6 @@ def processed_per_base_file():
         max_non_ref_base, axis=1
     )
 
-    data["expected_variant_codons"] = subpool_codon_fraction * data["n_total"]
-    data["estimated_wt_n"] = (
-        data["expected_variant_codons"] - data["n_variants"]
-    ).clip(lower=0)
-
     data["entropy"] = data[["A", "C", "G", "T"]].apply(
         lambda x: stats.entropy(x), axis=1
     )
@@ -515,11 +502,10 @@ def processed_per_base_file():
         entropy_without_max_value, axis=1
     )
 
-    data["estimated_entropy"] = data[["A", "C", "G", "T", "estimated_wt_n"]].apply(
-        entropy_without_max_value, axis=1
-    )
-    data["entropy_diff"] = data["entropy"] - data["estimated_entropy"]
-    data["percent_of_max_entropy_estimated"] = data["estimated_entropy"] / np.log(4)
+    data["expected_variant_codons"] = subpool_codon_fraction * data["n_total"]
+
+    data["expected_ref_n"] = data["n_total"] * (1 - subpool_codon_fraction)
+
     data["percent_of_max_entropy"] = data["entropy_without_max_value"] / np.log(3)
 
     # Create empty columns for alignment to start
@@ -557,6 +543,7 @@ def max_non_ref_base(x):
 
 # Reactive effects
 @reactive.effect
+@reactive.event(selected_range_low, selected_range_high)
 def update_data_selected_range():
     # Calculate data that is dependent on the range selection
 
@@ -566,15 +553,15 @@ def update_data_selected_range():
     selected_codon_range = range(
         selected_range_low.get() // 3, selected_range_high.get() // 3
     )
-    subpool_codon_fraction = 3 / (len(selected_codon_range) + 1)
+    subpool_codon_fraction = 1 / (len(selected_codon_range) + 1)
 
     parsed_per_base_file()["is_selected"] = parsed_per_base_file()["codon_number"].isin(
         selected_codon_range
     )
 
-    parsed_per_base_file()["codon_fraction"] = parsed_per_base_file()[
-        "is_selected"
-    ].apply(lambda x: subpool_codon_fraction if x else 1 - subpool_codon_fraction)
+    parsed_per_base_file()["expected_variant_codons"] = (
+        subpool_codon_fraction * parsed_per_base_file()["n_total"]
+    )
 
 
 # Update alignment when a reference sequence is uploaded
@@ -589,7 +576,6 @@ def update_alignment():
 def update_max_pos():
     if not processed_per_base_file().empty:
         ui.update_numeric("max_pos", value=sequence_length.get())
-        ui.update_slider("pos_range", max=sequence_length.get())
 
 
 @reactive.effect
@@ -605,9 +591,6 @@ def updated_selected_range():
 @reactive.event(input.min_pos)
 def updated_min_pos():
     selected_range_low.set(input.min_pos())
-    ui.update_slider(
-        "selected_range", value=(selected_range_low.get(), selected_range_high.get())
-    )
     ui.update_numeric("min_pos", value=selected_range_low.get())
 
 
@@ -615,9 +598,6 @@ def updated_min_pos():
 @reactive.event(input.max_pos)
 def updated_max_pos():
     selected_range_high.set(input.max_pos())
-    ui.update_slider(
-        "selected_range", value=(selected_range_low.get(), selected_range_high.get())
-    )
     ui.update_numeric("max_pos", value=selected_range_high.get())
 
 
