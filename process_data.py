@@ -146,3 +146,28 @@ def process_per_base_file(
     per_base_df["alignment_mismatch"] = [0] * len(per_base_df)
 
     return per_base_df
+
+
+def update_per_base_df(
+    per_base_df: pd.DataFrame,
+    selected_range_low: int,
+    selected_range_high: int,
+) -> None:
+
+    if per_base_df.empty:
+        return
+
+    selected_codon_range = range(selected_range_low // 3, selected_range_high // 3)
+    subpool_codon_fraction = 1 / (len(selected_codon_range) + 1)
+
+    per_base_df["is_selected"] = per_base_df["codon_number"].isin(selected_codon_range)
+
+    per_base_df["expected_variant_codons"] = (
+        subpool_codon_fraction * per_base_df["n_total"]
+    )
+
+    per_base_df["variant_fraction_percent"] = (
+        (4 / 3) * per_base_df["variant_fraction"] / subpool_codon_fraction
+    ).replace([np.inf, -np.inf], np.nan)
+
+    return
