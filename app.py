@@ -333,32 +333,6 @@ def processed_per_base_file():
     return data
 
 
-# Helper functions for data processing
-def effective_entropy(x):
-    row_list = [i for i in x if i != max(x)]
-
-    # Set values below 2 to 0
-    row_list = [0 if i < 3 else i for i in row_list]
-
-    return stats.entropy(row_list)
-
-
-def n_variants(x):
-    return sum([i for i in x if i != max(x)])
-
-
-def n_observations(x):
-    return sum(x)
-
-
-def max_non_ref_base(x):
-    ref = x["ref"]
-    non_ref_bases = [i for i in x[["A", "C", "G", "T"]] if i != x[ref]]
-    if non_ref_bases:
-        return max(non_ref_bases)
-    return 0
-
-
 # Reactive effects
 @reactive.effect
 @reactive.event(selected_range_low, selected_range_high)
