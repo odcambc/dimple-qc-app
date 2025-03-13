@@ -4,10 +4,13 @@ from shiny import reactive
 from shiny.express import input, render, ui
 from shiny.types import FileInfo
 
+from shinywidgets import render_plotly
+
 from Bio import SeqIO
 
 from faicons import icon_svg
 
+from plotly_plots import base_position_vs_value_plot_plotly
 from plots import position_vs_value_plot, violin_plot
 from process_data import process_per_base_file, update_per_base_df
 from shared import column_colors_dict, column_names_dict, column_tooltips, tabular_cols
@@ -97,19 +100,12 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
         with ui.navset_card_pill():
             with ui.nav_panel("Plots"):
 
-                @render.plot
-                def render_scatterplot():
-                    pos_plot = position_vs_value_plot(
+                @render_plotly
+                def plotly_position_plot():
+                    pos_plot = base_position_vs_value_plot_plotly(
                         processed_per_base_file(),
                         input.data_series(),
-                        selected_range_low.get(),
-                        selected_range_high.get(),
-                        plot_range_low.get(),
-                        plot_range_high.get(),
-                        last_selected_series.get(),
-                        column_colors_dict,
-                        column_names_dict,
-                        input.show_means(),
+                        [plot_range_low.get(), plot_range_high.get()],
                     )
 
                     return pos_plot
