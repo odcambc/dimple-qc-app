@@ -14,6 +14,8 @@ from Bio import pairwise2
 
 from faicons import icon_svg
 
+from process_data import process_per_base_file
+
 
 # from input_checkbox_group_tooltips import input_checkbox_group_tooltips
 
@@ -22,7 +24,7 @@ ui.include_css("./styles.css")
 
 column_names_dict = {
     "entropy": "Entropy",
-    "entropy_without_max_value": "Effective entropy",
+    "effective_entropy": "Effective entropy",
     "percent_of_max_entropy": "Entropy % max",
     "n_total": "Total reads",
     "n_variants": "Variant reads",
@@ -38,7 +40,7 @@ column_names_dict = {
 
 column_colors_dict = {
     "entropy": "#009E73",
-    "entropy_without_max_value": "#56B4E9",
+    "effective_entropy": "#56B4E9",
     "percent_of_max_entropy": "#D55E00",
     "n_total": "#000000",
     "n_variants": "#F0E442",
@@ -54,7 +56,7 @@ column_colors_dict = {
 # Define the tooltips for each option
 column_tooltips = {
     "entropy": "Shannon entropy, measuring sequence diversity. Higher values indicate a more even distribution of bases.",
-    "entropy_without_max_value": "Entropy of non-reference (i.e., variant) reads. This value more accurately reflects the diversity of the variant library: it excludes the reference base counts, which are always expected to be the majority at any given position.",
+    "effective_entropy": "Entropy of non-reference (i.e., variant) reads. This value more accurately reflects the diversity of the variant library: it excludes the reference base counts, which are always expected to be the majority at any given position.",
     "percent_of_max_entropy": "Fraction of maximum possible entropy at position. Values significantly below 1 indicate that the sequence diversity is lower than expected.",
     "n_total": "Total number of reads covering each position.",
     "n_variants": "Number of variant reads at each position.",
@@ -80,43 +82,6 @@ selected_range_high = reactive.value(100)
 
 # Store the last selected series for violin plots
 last_selected_series = reactive.value("entropy")
-
-# Custom CSS for tooltips
-ui.tags.style(
-    """
-.tooltip-container {
-    position: relative;
-    display: inline-block;
-    cursor: help;
-}
-
-.tooltip-container .tooltip-text {
-    visibility: hidden;
-    width: 200px;
-    background-color: black;
-    color: white;
-    text-align: center;
-    padding: 5px;
-    border-radius: 5px;
-
-    /* Positioning */
-    position: absolute;
-    z-index: 1;
-    bottom: 100%; /* Show above */
-    left: 50%;
-    transform: translateX(-50%);
-
-    /* Fade-in effect */
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.tooltip-container:hover .tooltip-text {
-    visibility: visible;
-    opacity: 1;
-}
-"""
-)
 
 
 # Create a checkbox with a tooltip at the end
@@ -288,7 +253,7 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                         "n_variants",
                         "variant_fraction",
                         "entropy",
-                        "entropy_without_max_value",
+                        "effective_entropy",
                         "percent_of_max_entropy",
                         "insertions",
                         "deletions",
@@ -403,7 +368,7 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
             "Average effective entropy"
 
             @render.text
-            def avg_entropy_without_max_value():
+            def avg_effective_entropy():
                 df = processed_per_base_file()
                 if df.empty:
                     return "0"
@@ -412,9 +377,9 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                     selected_range_low.get(), selected_range_high.get()
                 )
 
-                full_avg = df["entropy_without_max_value"].mean(skipna=True)
+                full_avg = df["effective_entropy"].mean(skipna=True)
                 range_avg = df.loc[df["pos"].isin(selected_range)][
-                    "entropy_without_max_value"
+                    "effective_entropy"
                 ].mean(skipna=True)
 
                 return f"{full_avg:.2f} ({range_avg:.2f} in selected)"
@@ -455,7 +420,7 @@ def processed_per_base_file():
     if parsed_per_base_file().empty:
         return pd.DataFrame()
 
-    data = parsed_per_base_file()
+    data = process_per_base_file(parsed_per_base_file())
 
     # Set the sequence length
     sequence_length.set(max(data["pos"]))
@@ -464,65 +429,11 @@ def processed_per_base_file():
     selected_range_high.set(sequence_length.get())
     plot_range_high.set(sequence_length.get())
 
-    selected_codon_range = range(0, sequence_length.get() // 3)
-
-    subpool_codon_fraction = 1 / (len(selected_codon_range) + 1)
-
-    data["codon_number"] = data["pos"] // 3
-
-    data["is_selected"] = data["codon_number"].isin(selected_codon_range)
-
-    data["n_variants"] = data[["A", "C", "G", "T"]].apply(n_variants, axis=1)
-
-    data["n_indels"] = data[["insertions", "deletions"]].apply(n_observations, axis=1)
-    data["n_total"] = data[["A", "C", "G", "T"]].apply(n_observations, axis=1)
-
-    # Calculate ratios while avoiding division by zero
-
-    data["variant_fraction"] = (data["n_variants"] / data["reads_all"]).replace(
-        [np.inf, -np.inf], np.nan
-    )
-
-    data["variant_fraction_percent"] = (
-        (4 / 3) * data["variant_fraction"] / subpool_codon_fraction
-    ).replace([np.inf, -np.inf], np.nan)
-
-    data["indel_fraction"] = (data["n_indels"] / data["reads_all"]).replace(
-        [np.inf, -np.inf], np.nan
-    )
-
-    data["indel_substitution_ratio"] = (data["n_indels"] / data["n_variants"]).replace(
-        [np.inf, -np.inf], np.nan
-    )
-
-    # Calculate the counts of the most common non-reference base
-
-    data["max_variant_base"] = data[["ref", "A", "C", "G", "T"]].apply(
-        max_non_ref_base, axis=1
-    )
-
-    data["entropy"] = data[["A", "C", "G", "T"]].apply(
-        lambda x: stats.entropy(x), axis=1
-    )
-    data["entropy_without_max_value"] = data[["A", "C", "G", "T"]].apply(
-        entropy_without_max_value, axis=1
-    )
-
-    data["expected_variant_codons"] = subpool_codon_fraction * data["n_total"]
-
-    data["expected_ref_n"] = data["n_total"] * (1 - subpool_codon_fraction)
-
-    data["percent_of_max_entropy"] = data["entropy_without_max_value"] / np.log(3)
-
-    # Create empty columns for alignment to start
-    data["aligned_ref"] = ["-"] * len(data)
-    data["alignment_mismatch"] = [0] * len(data)
-
     return data
 
 
 # Helper functions for data processing
-def entropy_without_max_value(x):
+def effective_entropy(x):
     row_list = [i for i in x if i != max(x)]
 
     # Set values below 2 to 0
