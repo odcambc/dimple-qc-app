@@ -1,8 +1,5 @@
-import seaborn as sns
-
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import scipy.stats as stats
 
 from shiny import reactive
@@ -15,7 +12,7 @@ from Bio import pairwise2
 from faicons import icon_svg
 
 from process_data import process_per_base_file
-
+from plots import position_vs_value_plot, violin_plot
 
 # from input_checkbox_group_tooltips import input_checkbox_group_tooltips
 
@@ -150,86 +147,20 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
                 @render.plot
                 def render_scatterplot():
-                    if processed_per_base_file().empty:
-                        return plt.figure()
-                    pos_plot = sns.scatterplot()
-                    pos_plot.axvline(
-                        selected_range_low.get(), color="black", linestyle="--"
+                    pos_plot = position_vs_value_plot(
+                        processed_per_base_file(),
+                        input.data_series(),
+                        selected_range_low.get(),
+                        selected_range_high.get(),
+                        plot_range_low.get(),
+                        plot_range_high.get(),
+                        last_selected_series.get(),
+                        column_colors_dict,
+                        column_names_dict,
+                        input.show_means(),
                     )
-                    pos_plot.axvline(
-                        selected_range_high.get(), color="black", linestyle="--"
-                    )
-                    for series in input.data_series():
-                        sns.scatterplot(
-                            data=processed_per_base_file(),
-                            x="pos",
-                            y=series,
-                            color=column_colors_dict[series],
-                            edgecolors="black",
-                        )
-                    pos_plot.set_xlim(plot_range_low.get(), plot_range_high.get())
-                    pos_plot.set_xlabel("Position")
-                    pos_plot.set_ylabel(column_names_dict[last_selected_series.get()])
 
-                    # If show_means is selected, draw horizontal lines at means of last
-                    # selected series for the full range and selected range
-
-                    if input.show_means():
-                        if input.data_series():
-                            full_mean = processed_per_base_file()[
-                                last_selected_series.get()
-                            ].mean(skipna=True)
-                            selected_mean = (
-                                processed_per_base_file()
-                                .loc[
-                                    processed_per_base_file()["pos"].between(
-                                        selected_range_low.get(),
-                                        selected_range_high.get(),
-                                    ),
-                                    last_selected_series.get(),
-                                ]
-                                .mean(skipna=True)
-                            )
-
-                            pos_plot.axhline(
-                                float(full_mean),
-                                color=column_colors_dict[last_selected_series.get()],
-                                linestyle="solid",
-                            )
-                            pos_plot.axhline(
-                                float(selected_mean),
-                                color=column_colors_dict[last_selected_series.get()],
-                                linestyle="dashed",
-                            )
-                            # Add legend with correct line styles displayed
-                            from matplotlib.lines import Line2D
-
-                            legend_handles = [
-                                Line2D(
-                                    [0],
-                                    [0],
-                                    color=column_colors_dict[
-                                        last_selected_series.get()
-                                    ],
-                                    linestyle="solid",
-                                    label="Full range",
-                                ),
-                                Line2D(
-                                    [0],
-                                    [0],
-                                    color=column_colors_dict[
-                                        last_selected_series.get()
-                                    ],
-                                    linestyle="dashed",
-                                    label="Selected range",
-                                ),
-                            ]
-                            pos_plot.legend(
-                                handles=legend_handles,
-                                loc="upper right",
-                            )
-
-                        return pos_plot
+                    return pos_plot
 
                 with ui.layout_columns():
                     ui.input_action_button("zoom", "Zoom")
@@ -277,43 +208,13 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                 selected_range_low, selected_range_high, last_selected_series
             )
             def render_value_violins():
-                if processed_per_base_file().empty:
-                    return plt.figure()
-                if last_selected_series.get() not in processed_per_base_file():
-                    return plt.figure()
-
-                # Now refactor the df to allow for easy plotting.
-                # We want to plot the distributions of the selected series
-                # for the full range of the data vs the selected range.
-                # We can use the "is_selected" column to split the data.
-
-                plotting_df = processed_per_base_file().melt(
-                    id_vars=["is_selected"],
-                    value_vars=last_selected_series.get(),
-                    var_name="series",
-                    value_name="value",
+                distribution_plots = violin_plot(
+                    processed_per_base_file(),
+                    last_selected_series.get(),
+                    column_names_dict,
                 )
 
-                violin_plot = sns.violinplot(
-                    data=plotting_df,
-                    x="value",
-                    hue="is_selected",
-                    split=True,
-                    linewidth=1,
-                    linecolor="black",
-                    fill=True,
-                )
-                violin_plot.set_xlabel(column_names_dict[last_selected_series.get()])
-                violin_plot.set_ylabel("Density")
-                violin_plot.set_title(
-                    f"Distribution of {column_names_dict[last_selected_series.get()]}"
-                )
-                violin_plot.legend(
-                    title="Selected range",
-                    loc="upper right",
-                )
-
-                return violin_plot
+                return distribution_plots
 
     # Top summary fields
     with ui.card():
