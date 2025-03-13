@@ -1,6 +1,4 @@
 import pandas as pd
-import numpy as np
-import scipy.stats as stats
 
 from shiny import reactive
 from shiny.express import input, render, ui
@@ -11,7 +9,7 @@ from Bio import pairwise2
 
 from faicons import icon_svg
 
-from process_data import process_per_base_file
+from process_data import process_per_base_file, update_per_base_df
 from plots import position_vs_value_plot, violin_plot
 
 # from input_checkbox_group_tooltips import input_checkbox_group_tooltips
@@ -65,6 +63,29 @@ column_tooltips = {
     "indel_substitution_ratio": "Ratio of indels to substitutions at each position.",
     "max_variant_base": "Counts of the most common non-reference base.",
 }
+
+# Columns to show in tabular form
+tabular_cols = [
+    "pos",
+    "ref",
+    "aligned_ref",
+    "A",
+    "C",
+    "G",
+    "T",
+    "reads_all",
+    "n_variants",
+    "variant_fraction",
+    "entropy",
+    "effective_entropy",
+    "percent_of_max_entropy",
+    "insertions",
+    "deletions",
+    "indel_fraction",
+    "indel_substitution_ratio",
+    "alignment_mismatch",
+    "max_variant_base",
+]
 
 # Store the selected upper and lower range for plotting
 plot_range_low = reactive.value(0)
@@ -172,30 +193,10 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                 def sequencing_data():
                     if processed_per_base_file().empty:
                         return pd.DataFrame()
-                    cols = [
-                        "pos",
-                        "ref",
-                        "aligned_ref",
-                        "A",
-                        "C",
-                        "G",
-                        "T",
-                        "reads_all",
-                        "n_variants",
-                        "variant_fraction",
-                        "entropy",
-                        "effective_entropy",
-                        "percent_of_max_entropy",
-                        "insertions",
-                        "deletions",
-                        "indel_fraction",
-                        "indel_substitution_ratio",
-                        "alignment_mismatch",
-                        "max_variant_base",
-                    ]
 
                     return render.DataGrid(
-                        pd.DataFrame(processed_per_base_file()[cols]), filters=False
+                        pd.DataFrame(processed_per_base_file()[tabular_cols]),
+                        filters=False,
                     )
 
         # Bottom 2D plots
@@ -342,22 +343,9 @@ def update_data_selected_range():
     if processed_per_base_file().empty:
         return
 
-    selected_codon_range = range(
-        selected_range_low.get() // 3, selected_range_high.get() // 3
+    update_per_base_df(
+        processed_per_base_file(), selected_range_low.get(), selected_range_high.get()
     )
-    subpool_codon_fraction = 1 / (len(selected_codon_range) + 1)
-
-    parsed_per_base_file()["is_selected"] = parsed_per_base_file()["codon_number"].isin(
-        selected_codon_range
-    )
-
-    parsed_per_base_file()["expected_variant_codons"] = (
-        subpool_codon_fraction * parsed_per_base_file()["n_total"]
-    )
-
-    parsed_per_base_file()["variant_fraction_percent"] = (
-        (4 / 3) * parsed_per_base_file()["variant_fraction"] / subpool_codon_fraction
-    ).replace([np.inf, -np.inf], np.nan)
 
 
 # Update alignment when a reference sequence is uploaded
