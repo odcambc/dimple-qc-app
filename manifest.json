@@ -15,7 +15,7 @@
   },
   "files": {
     "requirements.txt": {
-      "checksum": "4aa5943559de7ce300a4143994328a7a"
+      "checksum": "a9361512602a649b49d2ea7ad6113149"
     },
     ".gitignore": {
       "checksum": "7a29f40db72179919bd9e6410361bc18"
@@ -38,8 +38,11 @@
     "LICENSE": {
       "checksum": "27b6dd135a3be75d1477d7be30ede743"
     },
+    "README.md": {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e"
+    },
     "app.py": {
-      "checksum": "ef1ad9da408a9088131a1f54c3e93c81"
+      "checksum": "82deeffdb5cc5397eae273b2b7e1ae58"
     },
     "bad_ref.fasta": {
       "checksum": "acfb4a3bce373829ec94d7c4d2c552ca"
@@ -47,20 +50,23 @@
     "input_checkbox_group_tooltips.py": {
       "checksum": "9d522bfb4f6e390dc82e5a88956973de"
     },
+    "plotly_plots.py": {
+      "checksum": "fdc264a6036da42e49c705c9f2f4e7fe"
+    },
     "plots.py": {
-      "checksum": "dbbbd1a227be59a2a42caf407c6bbfb5"
+      "checksum": "13e9c08d31da20b9444b72a9c940e6f1"
     },
     "process_data.py": {
-      "checksum": "8ff1b91e217ecfe80f9c98b414e48dd0"
+      "checksum": "33bc3b19c8013dd3ef063653a3a1d165"
     },
     "scratch.txt": {
-      "checksum": "49192fb99ea99d13c95a3327f8f15aa0"
+      "checksum": "523d101a48ca5662c079fc256535bd09"
     },
     "shared.py": {
-      "checksum": "8f63ded2d08269af8b8553fbfb8e50ad"
+      "checksum": "d7ee551cf9f04adb1e1993e5d00cb041"
     },
     "styles.css": {
-      "checksum": "1373b8dd403265bdec743a0e971367fc"
+      "checksum": "95d894b2af82419f0fe1386fb9078ab8"
     }
   }
 }
