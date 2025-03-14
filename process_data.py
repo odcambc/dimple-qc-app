@@ -87,7 +87,7 @@ def process_per_base_file(
 
     per_base_df["codon_number"] = per_base_df["pos"] // 3
 
-    per_base_df["is_selected"] = per_base_df["codon_number"].isin(selected_codon_range)
+    per_base_df["is_selected"] = [True] * len(per_base_df)
 
     per_base_df["n_variants"] = per_base_df[["A", "C", "G", "T"]].apply(
         n_variants, axis=1

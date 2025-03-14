@@ -25,10 +25,6 @@ ui.include_css("./styles.css")
 # Store the max position (i.e., the length of the sequencing data)
 sequence_length = reactive.value(100)
 
-# Store the selected upper and lower selection range
-selected_range_low = reactive.value(0)
-selected_range_high = reactive.value(100)
-
 # Store the last selected series for violin plots
 last_selected_series = reactive.value("entropy")
 
@@ -55,7 +51,11 @@ with ui.sidebar(title="Settings"):
         @render.ui
         def min_pos_input():
             return ui.input_numeric(
-                "min_pos", "Lower", min=0, value=selected_range_low.get()
+                "min_pos",
+                "Lower",
+                min=0,
+                value=0,
+                update_on="blur",
             )
 
         @render.ui
@@ -64,7 +64,8 @@ with ui.sidebar(title="Settings"):
                 "max_pos",
                 "Upper",
                 max=sequence_length.get(),
-                value=selected_range_high.get(),
+                value=100,
+                update_on="blur",
             )
 
     # Render the checkbox group with tooltips
@@ -103,8 +104,8 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                         processed_per_base_file(),
                         input.data_series(),
                         [0, sequence_length.get()],
-                        selected_range_low.get(),
-                        selected_range_high.get(),
+                        input.min_pos(),
+                        input.max_pos(),
                         last_selected_series.get(),
                         input.show_means(),
                     )
@@ -128,7 +129,10 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
             @render.plot
             @reactive.event(
-                selected_range_low, selected_range_high, last_selected_series
+                input.min_pos,
+                input.max_pos,
+                last_selected_series,
+                input.data_series,
             )
             def render_value_violins():
                 distribution_plots = violin_plot(
@@ -152,9 +156,7 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                 if df.empty:
                     return "0"
 
-                selected_range = range(
-                    selected_range_low.get(), selected_range_high.get()
-                )
+                selected_range = range(input.min_pos(), input.max_pos())
 
                 full_avg = df["reads_all"].mean(skipna=True)
                 range_avg = df.loc[df["pos"].isin(selected_range), "reads_all"].mean(
@@ -175,9 +177,7 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                 if df.empty:
                     return "0"
 
-                selected_range = range(
-                    selected_range_low.get(), selected_range_high.get()
-                )
+                selected_range = range(input.min_pos(), input.max_pos())
 
                 selected_series = last_selected_series.get()
 
@@ -197,9 +197,7 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                 if df.empty:
                     return "0"
 
-                selected_range = range(
-                    selected_range_low.get(), selected_range_high.get()
-                )
+                selected_range = range(input.min_pos(), input.max_pos())
 
                 full_avg = df["effective_entropy"].mean(skipna=True)
                 range_avg = df.loc[df["pos"].isin(selected_range)][
@@ -249,24 +247,18 @@ def processed_per_base_file():
     # Set the sequence length
     sequence_length.set(max(data["pos"]))
 
-    # Update the selected range and plotting range
-    selected_range_high.set(sequence_length.get())
-
     return data
 
 
 # Reactive effects
 @reactive.effect
-@reactive.event(selected_range_low, selected_range_high)
 def update_data_selected_range():
     # Calculate data that is dependent on the range selection
 
     if processed_per_base_file().empty:
         return
 
-    update_per_base_df(
-        processed_per_base_file(), selected_range_low.get(), selected_range_high.get()
-    )
+    update_per_base_df(processed_per_base_file(), input.min_pos(), input.max_pos())
 
 
 # Update alignment when a reference sequence is uploaded
@@ -281,29 +273,6 @@ def update_alignment():
 def update_max_pos():
     if not processed_per_base_file().empty:
         ui.update_numeric("max_pos", value=sequence_length.get())
-
-
-@reactive.effect
-@reactive.event(input.selected_range)
-def updated_selected_range():
-    selected_range_low.set(input.selected_range()[0])
-    selected_range_high.set(input.selected_range()[1])
-    ui.update_numeric("min_pos", value=selected_range_low.get())
-    ui.update_numeric("max_pos", value=selected_range_high.get())
-
-
-@reactive.effect
-@reactive.event(input.min_pos)
-def updated_min_pos():
-    selected_range_low.set(input.min_pos())
-    ui.update_numeric("min_pos", value=selected_range_low.get())
-
-
-@reactive.effect
-@reactive.event(input.max_pos)
-def updated_max_pos():
-    selected_range_high.set(input.max_pos())
-    ui.update_numeric("max_pos", value=selected_range_high.get())
 
 
 # Update the last selected series from the checkbox group
