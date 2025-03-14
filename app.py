@@ -4,11 +4,15 @@ from shiny import reactive
 from shiny.express import input, render, ui
 from shiny.types import FileInfo
 
+from shinywidgets import render_plotly
+
 from Bio import SeqIO
 
 from faicons import icon_svg
 
-from plots import position_vs_value_plot, violin_plot
+from plotly_plots import base_position_vs_value_plot_plotly
+
+from plots import violin_plot
 from process_data import process_per_base_file, update_per_base_df
 from shared import column_colors_dict, column_names_dict, column_tooltips, tabular_cols
 
@@ -17,10 +21,6 @@ from shared import column_colors_dict, column_names_dict, column_tooltips, tabul
 ui.page_opts(title="DIMPLE quick QC", fillable=True)
 ui.include_css("./styles.css")
 
-
-# Store the selected upper and lower range for plotting
-plot_range_low = reactive.value(0)
-plot_range_high = reactive.value(100)
 
 # Store the max position (i.e., the length of the sequencing data)
 sequence_length = reactive.value(100)
@@ -97,26 +97,19 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
         with ui.navset_card_pill():
             with ui.nav_panel("Plots"):
 
-                @render.plot
-                def render_scatterplot():
-                    pos_plot = position_vs_value_plot(
+                @render_plotly
+                def plotly_position_plot():
+                    pos_plot = base_position_vs_value_plot_plotly(
                         processed_per_base_file(),
                         input.data_series(),
+                        [0, sequence_length.get()],
                         selected_range_low.get(),
                         selected_range_high.get(),
-                        plot_range_low.get(),
-                        plot_range_high.get(),
                         last_selected_series.get(),
-                        column_colors_dict,
-                        column_names_dict,
                         input.show_means(),
                     )
 
                     return pos_plot
-
-                with ui.layout_columns():
-                    ui.input_action_button("zoom", "Zoom")
-                    ui.input_action_button("reset_zoom", "Reset")
 
             with ui.nav_panel("Tabular data"):
 
@@ -132,8 +125,6 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
         # Bottom 2D plots
         with ui.card(height=400):
-
-            ui.card_header("Distributions")
 
             @render.plot
             @reactive.event(
@@ -260,7 +251,6 @@ def processed_per_base_file():
 
     # Update the selected range and plotting range
     selected_range_high.set(sequence_length.get())
-    plot_range_high.set(sequence_length.get())
 
     return data
 
@@ -314,26 +304,6 @@ def updated_min_pos():
 def updated_max_pos():
     selected_range_high.set(input.max_pos())
     ui.update_numeric("max_pos", value=selected_range_high.get())
-
-
-# Update zoom when button is clicked
-@reactive.effect
-@reactive.event(input.zoom)
-def zoom():
-    # ui.update_numeric("min_pos", value=input.min_pos())
-    # ui.update_numeric("max_pos", value=input.max_pos())
-    plot_range_low.set(input.min_pos())
-    plot_range_high.set(input.max_pos())
-
-
-# Reset zoom when button is clicked
-@reactive.effect
-@reactive.event(input.reset_zoom)
-def reset_zoom():
-    # ui.update_slider("pos_range", value=[0, sequence_length])
-    # ui.update_numeric("min_pos", value=0)
-    plot_range_low.set(0)
-    plot_range_high.set(sequence_length.get())
 
 
 # Update the last selected series from the checkbox group
