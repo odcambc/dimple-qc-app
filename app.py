@@ -1,17 +1,19 @@
+from Bio import SeqIO
+from faicons import icon_svg
 import pandas as pd
-
 from shiny import reactive
 from shiny.express import input, render, ui
 from shiny.types import FileInfo
-
 from shinywidgets import render_plotly
 
-from Bio import SeqIO
-
-from faicons import icon_svg
-
+from evaluate_data import (
+    test_effective_entropy,
+    test_max_counts_non_ref,
+    test_variant_fraction,
+    pass_theme,
+    fail_theme,
+)
 from plotly_plots import base_position_vs_value_plot_plotly
-
 from plots import violin_plot
 from process_data import process_per_base_file, update_per_base_df
 from shared import (
