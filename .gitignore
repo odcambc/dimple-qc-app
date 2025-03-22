@@ -559,3 +559,7 @@ MigrationBackup/
 # End of https://www.toptal.com/developers/gitignore/api/vs,python,osx
 
 rsconnect-python/
+
+notes/
+
+examples/
