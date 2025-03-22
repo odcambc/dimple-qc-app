@@ -74,6 +74,7 @@ def align_ref_to_variants(
 
 def process_per_base_file(
     per_base_df: pd.DataFrame,
+    reverse_complement: bool,
 ) -> pd.DataFrame:
     if per_base_df.empty:
         return pd.DataFrame()
@@ -144,6 +145,21 @@ def process_per_base_file(
     # Create empty columns for alignment to start
     per_base_df["aligned_ref"] = ["-"] * len(per_base_df)
     per_base_df["alignment_mismatch"] = [0] * len(per_base_df)
+
+    if reverse_complement:
+        # Reverse the index
+        per_base_df = per_base_df.iloc[::-1]
+
+        # Reverse the position values
+        per_base_df["pos"] = sequence_length - per_base_df["pos"] + 1
+
+        # Reverse complement the bases
+        per_base_df[["A", "C", "G", "T"]] = per_base_df[["T", "G", "C", "A"]]
+
+        # Reverse complement reference base
+        per_base_df["ref"] = per_base_df["ref"].apply(
+            lambda x: {"A": "T", "C": "G", "G": "C", "T": "A"}[x]
+        )
 
     return per_base_df
 
