@@ -68,6 +68,9 @@ with ui.sidebar(title="Settings"):
                 update_on="blur",
             )
 
+    # Checkbox for reverse complementing per-base file
+    ui.input_switch("reverse_complement", "Reverse complement")
+
     # Render the checkbox group with tooltips
     ui.input_checkbox_group(
         "data_series",
@@ -242,7 +245,7 @@ def processed_per_base_file():
     if parsed_per_base_file().empty:
         return pd.DataFrame()
 
-    data = process_per_base_file(parsed_per_base_file())
+    data = process_per_base_file(parsed_per_base_file(), input.reverse_complement())
 
     # Set the sequence length
     sequence_length.set(max(data["pos"]))
