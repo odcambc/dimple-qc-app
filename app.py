@@ -22,6 +22,12 @@ from shared import (
     tabular_cols,
 )
 
+from process_reference import (
+    align_ref_to_variants,
+    process_reference_fasta,
+    process_reference_genbank,
+)
+
 # from input_checkbox_group_tooltips import input_checkbox_group_tooltips
 
 ui.page_opts(title="DIMPLE quick QC", fillable=True)
@@ -94,9 +100,9 @@ with ui.sidebar(title="Settings"):
         multiple=False,
     )
     ui.input_file(
-        "reference_fasta",
+        "reference_file",
         "Upload reference sequence",
-        accept=[".fa:", ".fasta"],
+        accept=[".fa:", ".fasta", ".gb", ".genbank", ".gbk"],
         multiple=False,
     )
 
@@ -221,17 +227,20 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
 # Parse the input reference FASTA. Only handle single-sequence FASTA files.
 @reactive.calc
-def parsed_reference_fasta():
-    file = input.reference_fasta()
+def parsed_reference():
+    file = input.reference_file()
     if file is None:
         return None
-    try:
-        fasta_record = list(SeqIO.parse(file[0]["datapath"], "fasta"))
-        if len(fasta_record) != 1:
-            return None  # Only handle single-sequence FASTA files
-        return str(fasta_record[0].seq)
-    except Exception:
-        return None
+
+    # If it's fasta, parse as such
+    if file[0]["name"].endswith((".fa", ".fasta")):
+        return process_reference_fasta(file)
+    # If it's genbank, parse as such
+    if file[0]["name"].endswith((".gb", ".genbank", ".gbk")):
+        return process_reference_genbank(file)
+
+    # If it's neither, return None
+    return None
 
 
 @reactive.calc
@@ -278,7 +287,7 @@ def update_data_selected_range():
 
 # Update alignment when a reference sequence is uploaded
 @reactive.effect
-@reactive.event(input.reference_fasta)
+@reactive.event(input.reference_file)
 def update_alignment():
     return
 
