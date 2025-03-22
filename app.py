@@ -280,3 +280,17 @@ def update_max_pos():
 def update_last_selected_series():
     if input.data_series():
         last_selected_series.set(input.data_series()[-1])
+
+
+# Validate range inputs
+@reactive.effect
+def validate_range():
+    # Minimum should be strictly less than maximum
+    if input.min_pos() >= input.max_pos():
+        ui.update_numeric("min_pos", value=input.max_pos() - 1)
+    # Minimum should be greater than or equal to 0
+    if input.min_pos() < 0:
+        ui.update_numeric("min_pos", value=0)
+    # Maximum should be less than the sequence length
+    if input.max_pos() > sequence_length.get():
+        ui.update_numeric("max_pos", value=sequence_length.get())
