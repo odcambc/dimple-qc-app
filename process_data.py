@@ -151,10 +151,15 @@ def process_per_base_file(
         per_base_df = per_base_df.iloc[::-1]
 
         # Reverse the position values
-        per_base_df["pos"] = sequence_length - per_base_df["pos"]
+        per_base_df["pos"] = sequence_length - per_base_df["pos"] + 1
 
         # Reverse complement the bases
         per_base_df[["A", "C", "G", "T"]] = per_base_df[["T", "G", "C", "A"]]
+
+        # Reverse complement reference base
+        per_base_df["ref"] = per_base_df["ref"].apply(
+            lambda x: {"A": "T", "C": "G", "G": "C", "T": "A"}[x]
+        )
 
     return per_base_df
 
