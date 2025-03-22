@@ -14,7 +14,13 @@ from plotly_plots import base_position_vs_value_plot_plotly
 
 from plots import violin_plot
 from process_data import process_per_base_file, update_per_base_df
-from shared import column_colors_dict, column_names_dict, column_tooltips, tabular_cols
+from shared import (
+    expected_columns,
+    column_colors_dict,
+    column_names_dict,
+    column_tooltips,
+    tabular_cols,
+)
 
 # from input_checkbox_group_tooltips import input_checkbox_group_tooltips
 
@@ -208,6 +214,9 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
 
 # Reactive calcs and effects
+
+
+# Parse the input reference FASTA. Only handle single-sequence FASTA files.
 @reactive.calc
 def parsed_reference_fasta():
     file = input.reference_fasta()
@@ -228,12 +237,15 @@ def parsed_per_base_file():
     if file is None:
         return pd.DataFrame()
 
+    df = pd.read_csv(file[0]["datapath"], sep="\t")
+
+    if not validate_per_base_file(df):
+        return pd.DataFrame()
+
     # Plot entropy by default
     ui.update_checkbox_group("data_series", selected=["entropy"])
 
-    return pd.read_csv(
-        file[0]["datapath"], sep="\t"
-    )  # pyright: ignore[reportUnknownMemberType]
+    return df
 
 
 @reactive.calc
@@ -294,3 +306,18 @@ def validate_range():
     # Maximum should be less than the sequence length
     if input.max_pos() > sequence_length.get():
         ui.update_numeric("max_pos", value=sequence_length.get())
+
+
+def validate_per_base_file(per_base_file):
+    if per_base_file.empty:
+        return False
+
+    # Check that the file has the required columns defined in shared.py
+    missing_cols = set(expected_columns) - set(per_base_file.columns)
+    if missing_cols:
+        ui.notification_show(
+            f"Input per-base file is missing required data. Check format. Missing columns: {', '.join(missing_cols)}",
+        )
+        return False
+
+    return True
