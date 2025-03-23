@@ -44,21 +44,36 @@ def align_ref_to_variants(
     return per_base_df
 
 
-def process_reference_fasta(file):
+def process_reference_fasta(file) -> dict[str, str | list | None] | None:
+
     try:
         fasta_record = list(SeqIO.parse(file[0]["datapath"], "fasta"))
-        if len(fasta_record) != 1:
-            return None  # Only handle single-sequence FASTA files
-        return str(fasta_record[0].seq)
     except Exception:
         return None
 
+    if len(fasta_record) == 1:
+        sequence = str(fasta_record[0].seq)
+    else:
+        return None
 
-def process_reference_genbank(file):
+    # There are no features to parse from a fasta file
+    return {"sequence": sequence, "features": None}
+
+
+def process_reference_genbank(file) -> dict[str, str | list | None] | None:
     try:
         genbank_record = list(SeqIO.parse(file[0]["datapath"], "genbank"))
-        if len(genbank_record) != 1:
-            return None  # Only handle single-sequence GenBank files
-        return str(genbank_record[0].seq)
     except Exception:
         return None
+
+    # Only parse single-record files
+    if len(genbank_record) == 1:
+        genbank_record = list(genbank_record)[0]
+        sequence = str(genbank_record.seq)
+
+        # TODO: does features always return a list? Check
+        features = genbank_record.features
+    else:
+        return None
+
+    return {"sequence": sequence, "features": features}

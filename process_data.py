@@ -126,15 +126,28 @@ def update_per_base_df(
     per_base_df: pd.DataFrame,
     selected_range_low: int,
     selected_range_high: int,
+    parsed_reference: dict[str, str | list | None],
 ) -> None:
 
     if per_base_df.empty:
         return
 
-    selected_codon_range = range(selected_range_low // 3, selected_range_high // 3)
-    subpool_codon_fraction = 1 / (len(selected_codon_range) + 1)
+    selected_positions = list(range(selected_range_low, selected_range_high))
 
-    per_base_df["is_selected"] = per_base_df["codon_number"].isin(selected_codon_range)
+    if parsed_reference:
+        for feature in parsed_reference["features"]:
+            if feature:
+                if feature.type != "source":
+                    start = int(feature.location.start)
+                    end = int(feature.location.end)
+                    selected_positions += list(range(start, end))
+                    print(f"Feature: {feature.type} {start} {end}")
+
+    selected_codon_range = range(selected_range_low // 3, selected_range_high // 3)
+    subpool_codon_fraction = 3 / (len(selected_positions) + 1)
+
+    per_base_df["is_selected"] = per_base_df["pos"].isin(selected_positions)
+    print(len(selected_positions))
 
     per_base_df["expected_variant_codons"] = (
         subpool_codon_fraction * per_base_df["n_total"]
@@ -145,3 +158,32 @@ def update_per_base_df(
     ).replace([np.inf, -np.inf], np.nan)
 
     return
+
+
+def update_mean_values_per_base(
+    processed_per_base_df: pd.DataFrame, min_pos: int, max_pos: int
+) -> pd.DataFrame:
+    if processed_per_base_df.empty:
+        return pd.DataFrame()
+
+    means = processed_per_base_df.groupby("is_selected").agg(
+        {
+            "n_total": ["mean", "std"],
+            "reads_all": ["mean", "std"],
+            "n_variants": ["mean", "std"],
+            "variant_fraction": ["mean", "std"],
+            "variant_fraction_percent": ["mean", "std"],
+            "indel_fraction": ["mean", "std"],
+            "indel_substitution_ratio": ["mean", "std"],
+            "max_variant_base": ["mean", "std"],
+            "entropy": ["mean", "std"],
+            "effective_entropy": ["mean", "std"],
+            "percent_of_max_entropy": ["mean", "std"],
+            "expected_variant_codons": ["mean", "std"],
+            "expected_ref_n": ["mean", "std"],
+            "insertions": ["mean", "std"],
+            "deletions": ["mean", "std"],
+        }
+    )
+
+    return means

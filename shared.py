@@ -72,6 +72,7 @@ column_tooltips = {
 # Columns to show in tabular form
 tabular_cols = [
     "pos",
+    "is_selected",
     "ref",
     "aligned_ref",
     "A",

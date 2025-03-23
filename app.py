@@ -6,14 +6,19 @@ from shiny.types import FileInfo
 
 from shinywidgets import render_plotly
 
-from Bio import SeqIO
+# from Bio import SeqIO
 
 from faicons import icon_svg
 
 from plotly_plots import base_position_vs_value_plot_plotly
 
 from plots import violin_plot
-from process_data import process_per_base_file, update_per_base_df
+from process_data import (
+    process_per_base_file,
+    update_per_base_df,
+    update_mean_values_per_base,
+)
+import process_reference
 from shared import (
     expected_columns,
     column_colors_dict,
@@ -23,7 +28,6 @@ from shared import (
 )
 
 from process_reference import (
-    align_ref_to_variants,
     process_reference_fasta,
     process_reference_genbank,
 )
@@ -31,7 +35,7 @@ from process_reference import (
 # from input_checkbox_group_tooltips import input_checkbox_group_tooltips
 
 ui.page_opts(title="DIMPLE quick QC", fillable=True)
-ui.include_css("./styles.css")
+ui.include_css("styles.css")
 
 
 # Store the max position (i.e., the length of the sequencing data)
@@ -106,6 +110,29 @@ with ui.sidebar(title="Settings"):
         multiple=False,
     )
 
+    # Add a selectize input for identified features in parsed genbank file.
+    # Only show if a genbank file is uploaded.
+    @render.ui
+    def feature_select():
+        feature_names = ["None"]
+        features = None
+
+        if parsed_reference():
+            if parsed_reference()["features"]:
+                features = parsed_reference()["features"]
+                feature_names = [
+                    feature.qualifiers["label"][0]
+                    for feature in features
+                    if "label" in feature.qualifiers
+                ]
+
+        return ui.input_selectize(
+            "selected_features",
+            "Select feature",
+            choices=feature_names,
+            multiple=True,
+        )
+
 
 # Main content area
 with ui.layout_columns(columns=2, col_widths=[9, 3]):
@@ -167,18 +194,28 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
             @render.text
             def count():
-                df = processed_per_base_file()
-                if df.empty:
+                if mean_values_per_base().empty:
                     return "0"
 
-                selected_range = range(input.min_pos(), input.max_pos())
+                if "reads_all" not in mean_values_per_base().columns:
+                    return "1"
 
-                full_avg = df["reads_all"].mean(skipna=True)
-                range_avg = df.loc[df["pos"].isin(selected_range), "reads_all"].mean(
-                    skipna=True
-                )
+                if True not in mean_values_per_base().index:
+                    return str(mean_values_per_base().index)
+                    return "2"
 
-                return f"{int(full_avg)} ({int(range_avg)} in selected)"
+                selected_mean_reads = mean_values_per_base().at[
+                    True, ("reads_all", "mean")
+                ]
+
+                if False in mean_values_per_base().index:
+                    unselected_mean_reads = mean_values_per_base().at[
+                        False, ("reads_all", "mean")
+                    ]
+                else:
+                    unselected_mean_reads = selected_mean_reads
+
+                return f"{int(unselected_mean_reads)} ({int(selected_mean_reads)} in selected)"
 
         with ui.value_box():
 
@@ -188,38 +225,56 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
             @render.text
             def avg_last_selected():
-                df = processed_per_base_file()
-                if df.empty:
-                    return "0"
-
-                selected_range = range(input.min_pos(), input.max_pos())
-
                 selected_series = last_selected_series.get()
 
-                full_avg = df[selected_series].mean(skipna=True)
-                range_avg = df.loc[df["pos"].isin(selected_range)][
-                    selected_series
-                ].mean(skipna=True)
+                if mean_values_per_base().empty:
+                    return "0"
 
-                return f"{full_avg:.2f} ({range_avg:.2f} in selected)"
+                if True not in mean_values_per_base().index:
+                    return "0"
+
+                if selected_series not in mean_values_per_base().columns:
+                    return "0"
+
+                selected_mean_series = mean_values_per_base().at[
+                    True, (selected_series, "mean")
+                ]
+
+                if False in mean_values_per_base().index:
+                    unselected_mean_series = mean_values_per_base().at[
+                        False, (selected_series, "mean")
+                    ]
+                else:
+                    unselected_mean_series = selected_mean_series
+
+                return f"{unselected_mean_series:.2f} ({selected_mean_series:.2f} in selected)"
 
         with ui.value_box():
             "Average effective entropy"
 
             @render.text
             def avg_effective_entropy():
-                df = processed_per_base_file()
-                if df.empty:
+                if mean_values_per_base().empty:
                     return "0"
 
-                selected_range = range(input.min_pos(), input.max_pos())
+                if "effective_entropy" not in mean_values_per_base().columns:
+                    return "0"
 
-                full_avg = df["effective_entropy"].mean(skipna=True)
-                range_avg = df.loc[df["pos"].isin(selected_range)][
-                    "effective_entropy"
-                ].mean(skipna=True)
+                if True not in mean_values_per_base().index:
+                    return "0"
 
-                return f"{full_avg:.2f} ({range_avg:.2f} in selected)"
+                selected_mean_entropy = mean_values_per_base().at[
+                    True, ("effective_entropy", "mean")
+                ]
+
+                if False in mean_values_per_base().index:
+                    unselected_mean_entropy = mean_values_per_base().at[
+                        False, ("effective_entropy", "mean")
+                    ]
+                else:
+                    unselected_mean_entropy = selected_mean_entropy
+
+                return f"{unselected_mean_entropy:.2f} ({selected_mean_entropy:.2f} in selected)"
 
 
 # Reactive calcs and effects
@@ -227,7 +282,7 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
 # Parse the input reference FASTA. Only handle single-sequence FASTA files.
 @reactive.calc
-def parsed_reference():
+def parsed_reference() -> dict[str, str | list | None] | None:
     file = input.reference_file()
     if file is None:
         return None
@@ -274,7 +329,21 @@ def processed_per_base_file():
     return data
 
 
+# TODO: this df should also include the means for the full series, not just selected vs. non-selected
+@reactive.calc
+def mean_values_per_base():
+    if processed_per_base_file().empty:
+        return pd.DataFrame()
+
+    return update_mean_values_per_base(
+        processed_per_base_file(), input.min_pos(), input.max_pos()
+    )
+
+
 # Reactive effects
+
+
+# TODO: this is being performed _after_ mean_values_per_base is calculated, which is not ideal
 @reactive.effect
 def update_data_selected_range():
     # Calculate data that is dependent on the range selection
@@ -282,7 +351,9 @@ def update_data_selected_range():
     if processed_per_base_file().empty:
         return
 
-    update_per_base_df(processed_per_base_file(), input.min_pos(), input.max_pos())
+    update_per_base_df(
+        processed_per_base_file(), input.min_pos(), input.max_pos(), parsed_reference()
+    )
 
 
 # Update alignment when a reference sequence is uploaded
