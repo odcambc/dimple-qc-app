@@ -30,7 +30,7 @@
       "checksum": "5f95103e06486bfdf979d4ea84906a18"
     },
     "Dockerfile": {
-      "checksum": "7e43b2e110bd7598410f089c9b945bc0"
+      "checksum": "7c611740c2bbe91bede9053436a0dd80"
     },
     "LICENSE": {
       "checksum": "27b6dd135a3be75d1477d7be30ede743"
@@ -39,7 +39,10 @@
       "checksum": "d41d8cd98f00b204e9800998ecf8427e"
     },
     "app.py": {
-      "checksum": "99ed6cf7affe35df478775c142ca3a9e"
+      "checksum": "2b37b9dc150ff34b37eb36371db718ef"
+    },
+    "evaluate_data.py": {
+      "checksum": "0dc662c5d351ae37715be8adf523cd08"
     },
     "examples/.DS_Store": {
       "checksum": "415d1069a4da905bca9c9609c175908e"
@@ -665,26 +668,32 @@
     "notes/20250314_willow_update.pptx": {
       "checksum": "e909748fdd62adc0b5727bdbd199e607"
     },
+    "per_base_df.csv": {
+      "checksum": "9893b7493c554b4c0fbb8b8dd31f5a82"
+    },
     "plotly_plots.py": {
-      "checksum": "fdc264a6036da42e49c705c9f2f4e7fe"
+      "checksum": "92517a32aa3e4c140f2c97b72dc66b78"
     },
     "plots.py": {
       "checksum": "13e9c08d31da20b9444b72a9c940e6f1"
     },
     "process_data.py": {
-      "checksum": "9c1fb16dd5789a01b4afd5cd008aeaad"
+      "checksum": "f12253de1ed489af6b7f1b629a75bfc5"
     },
     "process_reference.py": {
       "checksum": "da359267c663ad4c26eb885ea57d038d"
     },
     "scratch.py": {
-      "checksum": "68a2bd610d0398e571d50d545f1d31d6"
+      "checksum": "2306ee6e1648e705841b4e38b476c928"
     },
     "shared.py": {
-      "checksum": "588a75a499638d4c00dfe943a7994c0c"
+      "checksum": "99c05b0b97a43d612224a9bed24bc69a"
     },
     "styles.css": {
       "checksum": "95d894b2af82419f0fe1386fb9078ab8"
+    },
+    "validation.py": {
+      "checksum": "ead2c28db179244b6fbd1039ce2eabd3"
     }
   }
 }
