@@ -1,4 +1,3 @@
-from Bio import pairwise2
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
@@ -6,12 +5,25 @@ import scipy.stats as stats
 
 # Helper functions for data processing
 def effective_entropy(x: pd.Series) -> np.float64:
-    row_list = [i for i in x if i != max(x)]
+    max_val = x.max()
 
-    # Set values below 2 to 0
-    row_list = [0 if i < 3 else i for i in row_list]
+    filtered = x[x != max_val].copy()
 
-    return np.float64(stats.entropy(row_list))
+    filtered[filtered < 3] = 0
+
+    return np.float64(stats.entropy(filtered))
+
+
+def compute_n_variants(df: pd.DataFrame) -> pd.Series:
+    bases = df[["A", "C", "G", "T"]].to_numpy()
+
+    max_vals = bases.max(axis=1, keepdims=True)
+    print(type(max_vals))
+
+    # Try using a mask instead of a loop
+    mask = bases == max_vals
+
+    return (bases * (~mask)).sum(axis=1)
 
 
 def n_variants(x: pd.Series) -> int:
@@ -48,16 +60,11 @@ def process_per_base_file(
 
     per_base_df["is_selected"] = [True] * len(per_base_df)
 
-    per_base_df["n_variants"] = per_base_df[["A", "C", "G", "T"]].apply(
-        n_variants, axis=1
-    )
+    per_base_df["n_variants"] = compute_n_variants(per_base_df)
 
-    per_base_df["n_indels"] = per_base_df[["insertions", "deletions"]].apply(
-        n_observations, axis=1
-    )
-    per_base_df["n_total"] = per_base_df[["A", "C", "G", "T"]].apply(
-        n_observations, axis=1
-    )
+    per_base_df["n_indels"] = per_base_df[["insertions", "deletions"]].sum(axis=1)
+
+    per_base_df["n_total"] = per_base_df[["A", "C", "G", "T"]].sum(axis=1)
 
     # Calculate ratios while avoiding division by zero
 
@@ -141,13 +148,11 @@ def update_per_base_df(
                     start = int(feature.location.start)
                     end = int(feature.location.end)
                     selected_positions += list(range(start, end))
-                    print(f"Feature: {feature.type} {start} {end}")
 
     selected_codon_range = range(selected_range_low // 3, selected_range_high // 3)
     subpool_codon_fraction = 3 / (len(selected_positions) + 1)
 
     per_base_df["is_selected"] = per_base_df["pos"].isin(selected_positions)
-    print(len(selected_positions))
 
     per_base_df["expected_variant_codons"] = (
         subpool_codon_fraction * per_base_df["n_total"]
@@ -163,9 +168,31 @@ def update_per_base_df(
 def update_mean_values_per_base(
     processed_per_base_df: pd.DataFrame, min_pos: int, max_pos: int
 ) -> pd.DataFrame:
-    if processed_per_base_df.empty:
-        return pd.DataFrame()
+    # Define the expected columns and multi-index structure
+    columns = [
+        "n_total",
+        "reads_all",
+        "n_variants",
+        "variant_fraction",
+        "variant_fraction_percent",
+        "indel_fraction",
+        "indel_substitution_ratio",
+        "max_variant_base",
+        "entropy",
+        "effective_entropy",
+        "percent_of_max_entropy",
+        "expected_variant_codons",
+        "expected_ref_n",
+        "insertions",
+        "deletions",
+    ]
+    multi_cols = pd.MultiIndex.from_product([columns, ["mean", "std"]])
 
+    # If input is empty, return a DataFrame with the expected structure filled with NaNs
+    if processed_per_base_df.empty:
+        return pd.DataFrame(np.nan, index=[True, False], columns=multi_cols)
+
+    # Perform the groupby aggregation
     means = processed_per_base_df.groupby("is_selected").agg(
         {
             "n_total": ["mean", "std"],
@@ -185,5 +212,8 @@ def update_mean_values_per_base(
             "deletions": ["mean", "std"],
         }
     )
+
+    # Ensure both True and False exist in the index, even if one group was missing
+    means = means.reindex([True, False], fill_value=np.nan)
 
     return means

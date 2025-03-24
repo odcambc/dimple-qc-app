@@ -1,4 +1,3 @@
-from numpy import mean
 import pandas as pd
 
 from shiny import reactive
@@ -14,15 +13,12 @@ from plotly_plots import (
     distribution_violin_plot_plotly,
 )
 
-from plots import violin_plot
 from process_data import (
     process_per_base_file,
     update_per_base_df,
     update_mean_values_per_base,
 )
-import process_reference
 from shared import (
-    expected_columns,
     column_colors_dict,
     column_names_dict,
     column_tooltips,

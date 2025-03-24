@@ -5,22 +5,6 @@ app_dir = Path(__file__).parent
 example_per_base_tsv = app_dir / "FKYSRV_1_PXR2.tsv"
 example_reference_fasta = app_dir / "FKYSRV_1_PXR2.fasta"
 
-# Expected columns in the per-base file
-expected_columns = [
-    "pos",
-    "ref",
-    "reads_all",
-    "matches",
-    "mismatches",
-    "deletions",
-    "insertions",
-    "low_conf",
-    "A",
-    "C",
-    "G",
-    "T",
-]
-
 # Define the columns to show in the plot
 column_names_dict = {
     "entropy": "Entropy",
@@ -72,7 +56,6 @@ column_tooltips = {
 # Columns to show in tabular form
 tabular_cols = [
     "pos",
-    "is_selected",
     "ref",
     "aligned_ref",
     "A",

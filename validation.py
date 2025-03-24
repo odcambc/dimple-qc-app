@@ -2,7 +2,22 @@
 
 import pandas as pd
 from shiny.express import ui
-from shared import expected_columns
+
+# Expected columns in the per-base file
+expected_columns = [
+    "pos",
+    "ref",
+    "reads_all",
+    "matches",
+    "mismatches",
+    "deletions",
+    "insertions",
+    "low_conf",
+    "A",
+    "C",
+    "G",
+    "T",
+]
 
 
 def validate_per_base_file(per_base_file: pd.DataFrame) -> bool:
