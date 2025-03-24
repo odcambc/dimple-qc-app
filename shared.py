@@ -75,3 +75,17 @@ tabular_cols = [
     "alignment_mismatch",
     "max_variant_base",
 ]
+
+test_cols = [
+    "reads_all",
+    "n_variants",
+    "variant_fraction",
+    "entropy",
+    "effective_entropy",
+    "percent_of_max_entropy",
+    "insertions",
+    "deletions",
+    "indel_fraction",
+    "indel_substitution_ratio",
+    "max_variant_base",
+]

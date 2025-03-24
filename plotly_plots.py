@@ -97,7 +97,6 @@ def distribution_violin_plot_plotly(
         return empty_fig
     if selected_series not in column_names_dict:
         return empty_fig
-    per_base_df.to_csv("per_base_df.csv")
 
     # Create a copy of the dataframe to avoid modifying the original
 

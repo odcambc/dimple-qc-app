@@ -1,5 +1,6 @@
 import pandas as pd
 
+from scipy.stats import f
 from shiny import reactive
 from shiny.express import input, render, ui
 from shiny.types import FileInfo
@@ -8,12 +9,15 @@ from shinywidgets import render_plotly
 
 from faicons import icon_svg
 
+from evaluate_data import test_per_base_file
+
 from plotly_plots import (
     base_position_vs_value_plot_plotly,
     distribution_violin_plot_plotly,
 )
 
 from process_data import (
+    process_full_mean_values,
     process_per_base_file,
     update_per_base_df,
     update_mean_values_per_base,
@@ -33,12 +37,17 @@ from process_reference import (
 from validation import validate_per_base_file
 
 
+# Class to store the app state and keep track of reactive values
 class AppState:
     def __init__(self):
         self.sequence_length = reactive.value(100)
         self.last_selected_series = reactive.value("entropy")
         self.processed_data = reactive.value(pd.DataFrame())
-        self.reference_data = reactive.value(None)
+        self.selected_mean_values = reactive.value(pd.DataFrame())
+        self.full_mean_values = reactive.value(pd.DataFrame())
+        self.selected_features = reactive.value([])
+        self.reference_data = reactive.value(dict())
+        self.summary_metrics = reactive.value(pd.DataFrame())
 
 
 app_state = AppState()
@@ -172,6 +181,15 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                         filters=False,
                     )
 
+            with ui.nav_panel("Statistical tests"):
+
+                @render.data_frame
+                def test_results_table():
+                    if test_results().empty:
+                        return pd.DataFrame()
+
+                    return render.DataGrid(test_results(), filters=False)
+
         # Bottom 2D plots
         with ui.card(height=400):
 
@@ -201,16 +219,17 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
             @render.text
             def count():
+
                 means = mean_values_per_base()
                 # If the DataFrame is empty or contains NaNs, return a default value
-                if means.empty or pd.isna(means.at[True, ("reads_all", "mean")]):
+                if means.empty or pd.isna(means.at["unselected", "reads_all_mean"]):
                     return "0"
 
-                selected_mean_reads = means.at[True, ("reads_all", "mean")]
-                if False in means.index and not pd.isna(
-                    means.at[False, ("reads_all", "mean")]
+                selected_mean_reads = means.at["selected", "reads_all_mean"]
+                if "unselected" in means.index and not pd.isna(
+                    means.at["unselected", "reads_all_mean"]
                 ):
-                    unselected_mean_reads = means.at[False, ("reads_all", "mean")]
+                    unselected_mean_reads = means.at["unselected", "reads_all_mean"]
                 else:
                     unselected_mean_reads = selected_mean_reads
 
@@ -230,14 +249,19 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
                 means = mean_values_per_base()
                 # If the DataFrame is empty or contains NaNs, return a default value
-                if means.empty or pd.isna(means.at[True, (selected_series, "mean")]):
+                if means.empty or pd.isna(
+                    means.at["selected", f"{selected_series}_mean"]
+                ):
                     return "0"
 
-                selected_mean_reads = means.at[True, (selected_series, "mean")]
-                if False in means.index and not pd.isna(
-                    means.at[False, (selected_series, "mean")]
+                selected_mean_reads = means.at["selected", f"{selected_series}_mean"]
+                if "unselected" in means.index and not pd.isna(
+                    means.at["unselected", f"{selected_series}_mean"]
                 ):
-                    unselected_mean_reads = means.at[False, (selected_series, "mean")]
+                    unselected_mean_reads = means.at[
+                        "unselected", f"{selected_series}_mean"
+                    ]
+
                 else:
                     unselected_mean_reads = selected_mean_reads
 
@@ -251,16 +275,16 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                 means = mean_values_per_base()
                 # If the DataFrame is empty or contains NaNs, return a default value
                 if means.empty or pd.isna(
-                    means.at[True, ("effective_entropy", "mean")]
+                    means.at["selected", "effective_entropy_mean"]
                 ):
                     return "0"
 
-                selected_mean_reads = means.at[True, ("effective_entropy", "mean")]
-                if False in means.index and not pd.isna(
-                    means.at[False, ("effective_entropy", "mean")]
+                selected_mean_reads = means.at["selected", "effective_entropy_mean"]
+                if "unselected" in means.index and not pd.isna(
+                    means.at["unselected", "effective_entropy_mean"]
                 ):
                     unselected_mean_reads = means.at[
-                        False, ("effective_entropy", "mean")
+                        "unselected", "effective_entropy_mean"
                     ]
                 else:
                     unselected_mean_reads = selected_mean_reads
@@ -320,6 +344,9 @@ def processed_per_base_file():
     # Update the shared state
     app_state.sequence_length.set(max(data["pos"]))
     app_state.processed_data.set(data)
+    app_state.selected_features.set(input.selected_features())
+
+    app_state.full_mean_values.set(process_full_mean_values(data))
 
     return data
 
@@ -329,16 +356,34 @@ def processed_per_base_file():
 def mean_values_per_base():
     if processed_per_base_file().empty:
         return pd.DataFrame()
-
-    return update_mean_values_per_base(
-        app_state.processed_data.get(), input.min_pos(), input.max_pos()
+    app_state.selected_mean_values.set(
+        update_mean_values_per_base(
+            app_state.processed_data.get(), input.min_pos(), input.max_pos()
+        )
     )
+
+    app_state.summary_metrics.set(
+        test_per_base_file(
+            app_state.processed_data.get(),
+            app_state.selected_mean_values.get(),
+            app_state.full_mean_values.get(),
+        )
+    )
+
+    return app_state.selected_mean_values()
+
+
+@reactive.calc
+def test_results():
+    if app_state.processed_data.get().empty:
+        return pd.DataFrame()
+
+    return app_state.summary_metrics.get()
 
 
 # Reactive effects
 
 
-# TODO: this is being performed _after_ mean_values_per_base is calculated, which is not ideal
 @reactive.effect
 @reactive.event(input.min_pos, input.max_pos)
 def update_data_selected_range():
