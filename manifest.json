@@ -15,10 +15,13 @@
   },
   "files": {
     "requirements.txt": {
-      "checksum": "a9361512602a649b49d2ea7ad6113149"
+      "checksum": "cf5b874984f27d1220b5ca2c3e1733ac"
+    },
+    ".DS_Store": {
+      "checksum": "21a2e28e8bef8814adc19272e8eb04a7"
     },
     ".gitignore": {
-      "checksum": "7a29f40db72179919bd9e6410361bc18"
+      "checksum": "3064be521a0dd3c672091bb7ded3903d"
     },
     ".vscode/pyrightconfig.json": {
       "checksum": "9e5e1eb3d75a54a7b8b977123444f98c"
@@ -26,14 +29,8 @@
     ".vscode/settings.json": {
       "checksum": "5f95103e06486bfdf979d4ea84906a18"
     },
-    "FKYSRV_1_PXR2.fasta": {
-      "checksum": "e1b92e76738f4a49f2838962a0888f61"
-    },
-    "FKYSRV_1_PXR2.gbk": {
-      "checksum": "30aae80980e36430a604442d944ba28c"
-    },
-    "FKYSRV_1_PXR2.tsv": {
-      "checksum": "a4a318ebcf554abab6099520d626419d"
+    "Dockerfile": {
+      "checksum": "7e43b2e110bd7598410f089c9b945bc0"
     },
     "LICENSE": {
       "checksum": "27b6dd135a3be75d1477d7be30ede743"
@@ -42,13 +39,631 @@
       "checksum": "d41d8cd98f00b204e9800998ecf8427e"
     },
     "app.py": {
-      "checksum": "82deeffdb5cc5397eae273b2b7e1ae58"
+      "checksum": "99ed6cf7affe35df478775c142ca3a9e"
     },
-    "bad_ref.fasta": {
+    "examples/.DS_Store": {
+      "checksum": "415d1069a4da905bca9c9609c175908e"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_ab1-files/SWCMM4_1_PXR_1.ab1": {
+      "checksum": "46bf304d0c944435882a6b634b2217b3"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_ab1-files/SWCMM4_2_PXR_1and3.ab1": {
+      "checksum": "80113ec8bcd561f4e73a490ba84d5b75"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_ab1-files/SWCMM4_3_PXR_2and4.ab1": {
+      "checksum": "b8fafe309f344f7a9bfde275b98bd639"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_ab1-files/SWCMM4_4_PXR_1and3and5and7.ab1": {
+      "checksum": "5c9a4ad40c061508500377f8bf385443"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_ab1-files/SWCMM4_5_PXR_4and6and8.ab1": {
+      "checksum": "6ec8a88db2130c97f5f8ea589098ee51"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_ab1-files/SWCMM4_6_PXR_1though8.ab1": {
+      "checksum": "3a63cfccbaf398de90ef221c68f20f34"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_coverage-plots/SWCMM4_1_PXR_1.png": {
+      "checksum": "0a8668e3a95607cb6aebc08fab286852"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_coverage-plots/SWCMM4_2_PXR_1and3.png": {
+      "checksum": "d65d30699a4ca7437c77dd6802d0b47e"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_coverage-plots/SWCMM4_3_PXR_2and4.png": {
+      "checksum": "7e9ea044d08f692bd2a7ec8ba2a1abbe"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_coverage-plots/SWCMM4_4_PXR_1and3and5and7.png": {
+      "checksum": "14917cdd98ecb26bf4e34779e85ee140"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_coverage-plots/SWCMM4_5_PXR_4and6and8.png": {
+      "checksum": "da0d48f6ec029ffea73c17eadf19ef78"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_coverage-plots/SWCMM4_6_PXR_1though8.png": {
+      "checksum": "fb71236f7d74aecdb875b01cc9a54752"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_fasta-files/SWCMM4_1_PXR_1.fasta": {
+      "checksum": "576ca756b5b325efc175d00936c39fa5"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_fasta-files/SWCMM4_2_PXR_1and3.fasta": {
+      "checksum": "116d806a34f7878a25f44c5e97a36e98"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_fasta-files/SWCMM4_3_PXR_2and4.fasta": {
+      "checksum": "fae252218c38ce3031ae7c74869d27b3"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_fasta-files/SWCMM4_4_PXR_1and3and5and7.fasta": {
+      "checksum": "42433f25dc83e5eb88e536960d0c57db"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_fasta-files/SWCMM4_5_PXR_4and6and8.fasta": {
+      "checksum": "0b0b8063ad758d9afcdf185ab60faea6"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_fasta-files/SWCMM4_6_PXR_1though8.fasta": {
+      "checksum": "50e1a1b51b807b9dd481ba9587f386bc"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_gel.png": {
+      "checksum": "5c50c9cffd4fa3742017bcc70ca16663"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_genbank-files/SWCMM4_1_PXR_1.gbk": {
+      "checksum": "2c4ceb314b0a8d087bb27470e85a4643"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_genbank-files/SWCMM4_2_PXR_1and3.gbk": {
+      "checksum": "a0a7a6a1222dfa24035cd081fc1b01b3"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_genbank-files/SWCMM4_3_PXR_2and4.gbk": {
+      "checksum": "b2f9bff9f914e5af207b12776b021e7d"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_genbank-files/SWCMM4_4_PXR_1and3and5and7.gbk": {
+      "checksum": "901fab18362d7cdc157f8b0343b4a038"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_genbank-files/SWCMM4_5_PXR_4and6and8.gbk": {
+      "checksum": "0277ebb2aeaea2e77c9fdc80236012d7"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_genbank-files/SWCMM4_6_PXR_1though8.gbk": {
+      "checksum": "cfa5114e768fa29d399d85eb29d3026f"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_histograms/SWCMM4_1_PXR_1.png": {
+      "checksum": "c1836ada41c57271f36e7504d2c01388"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_histograms/SWCMM4_2_PXR_1and3.png": {
+      "checksum": "24bebd2af007f7b83bdc2b6bb5fe7204"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_histograms/SWCMM4_3_PXR_2and4.png": {
+      "checksum": "152b3dd5ed7e8461625d53bb254b613d"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_histograms/SWCMM4_4_PXR_1and3and5and7.png": {
+      "checksum": "6637a0968b852aaf9994f3e206c120d6"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_histograms/SWCMM4_5_PXR_4and6and8.png": {
+      "checksum": "2dbbe9711c1bcbea361f24a853737887"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_histograms/SWCMM4_6_PXR_1though8.png": {
+      "checksum": "69c2b8755486cbb1d794ccdc12af8e8f"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_interactive-map/SWCMM4_1_PXR_1.html": {
+      "checksum": "c46cf6dafa91364fc2a5028263cbb658"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_interactive-map/SWCMM4_2_PXR_1and3.html": {
+      "checksum": "3b63a843259f8ad18d511c2357e8c756"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_interactive-map/SWCMM4_3_PXR_2and4.html": {
+      "checksum": "01c3538dd81788cda290f452e5e3869d"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_interactive-map/SWCMM4_4_PXR_1and3and5and7.html": {
+      "checksum": "f47b3772f00f52222eb991257ee77052"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_interactive-map/SWCMM4_5_PXR_4and6and8.html": {
+      "checksum": "df9e0dfb681a9103d5b1ef1ccd940872"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_interactive-map/SWCMM4_6_PXR_1though8.html": {
+      "checksum": "288c612baf8639b482f15b5d71128d16"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_per-base-data/SWCMM4_1_PXR_1.tsv": {
+      "checksum": "b1658106f97a5427a29f3b0f2c44e999"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_per-base-data/SWCMM4_2_PXR_1and3.tsv": {
+      "checksum": "ba291befe9f77ac626ed142b1e6a20bc"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_per-base-data/SWCMM4_3_PXR_2and4.tsv": {
+      "checksum": "7dc477936f9c189f67f23c644e5c4209"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_per-base-data/SWCMM4_4_PXR_1and3and5and7.tsv": {
+      "checksum": "a0f4c894d768ee85514b246ed5362a8c"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_per-base-data/SWCMM4_5_PXR_4and6and8.tsv": {
+      "checksum": "86a2c9541500f3355e6a66c190744b3f"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_per-base-data/SWCMM4_6_PXR_1though8.tsv": {
+      "checksum": "0de42fc781bf9f8c3d462f6c272ae2ad"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_summary-files/SWCMM4_1_PXR_1.txt": {
+      "checksum": "4de9f9b39af60aaa36eedc2e81e737af"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_summary-files/SWCMM4_2_PXR_1and3.txt": {
+      "checksum": "46f007916f612e376f12e8792816e62c"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_summary-files/SWCMM4_3_PXR_2and4.txt": {
+      "checksum": "a11dd6f9750a1216a5dc5ca8964cc914"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_summary-files/SWCMM4_4_PXR_1and3and5and7.txt": {
+      "checksum": "d9e4ac32508ac71637df22a2b1f6053e"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_summary-files/SWCMM4_5_PXR_4and6and8.txt": {
+      "checksum": "647e7d9bf4a80d809550697b52a0db75"
+    },
+    "examples/20250314_multiplexing_SWCMM4/SWCMM4_summary-files/SWCMM4_6_PXR_1though8.txt": {
+      "checksum": "647e7d9bf4a80d809550697b52a0db75"
+    },
+    "examples/FKYSRV_1_PXR2.fasta": {
+      "checksum": "e1b92e76738f4a49f2838962a0888f61"
+    },
+    "examples/FKYSRV_1_PXR2.gb": {
+      "checksum": "b94108f846fc66b21712be3a3993ff64"
+    },
+    "examples/FKYSRV_1_PXR2.gbk": {
+      "checksum": "30aae80980e36430a604442d944ba28c"
+    },
+    "examples/FKYSRV_1_PXR2.tsv": {
+      "checksum": "a4a318ebcf554abab6099520d626419d"
+    },
+    "examples/LandingPKD_Target_sequencing/.DS_Store": {
+      "checksum": "97247fc2367068500138c9d24d042054"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/Landing_Receiving_1_1__01_1_of_2.ab1": {
+      "checksum": "5c458f787bc4c8e6116034e7d83e7ede"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/Landing_Receiving_1_1__01_2_of_2.ab1": {
+      "checksum": "d19f5d01a0d9480667c0ae518d9216f4"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/Landing_Receiving_1_2__02_1_of_2.ab1": {
+      "checksum": "745ea5f1ccaa322526fe284f4f9dd528"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/Landing_Receiving_1_2__02_2_of_2.ab1": {
+      "checksum": "fc449ae99a94d56a0fae3e52a38e938b"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/Landing_Receiving_1_3__03_1_of_2.ab1": {
+      "checksum": "dfb24e2a6b1e0c344155894197ff3ebb"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/Landing_Receiving_1_3__03_2_of_2.ab1": {
+      "checksum": "d0527a6d0d836a23e9e52552dee67f77"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/Landing_Receiving_1_4__04_1_of_2.ab1": {
+      "checksum": "107513b6850be6b4fbd12e3c7eb09530"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/Landing_Receiving_1_4__04_2_of_2.ab1": {
+      "checksum": "fb019587415b176583420886052f05ee"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/Landing_Receiving_2_05_1_of_2.ab1": {
+      "checksum": "61667de3abe6d7675f847e873ea48f11"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/Landing_Receiving_2_05_2_of_2.ab1": {
+      "checksum": "158255e8eccd348cdf5e003f38473c69"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/Landing_Receiving_3_06_1_of_2.ab1": {
+      "checksum": "163b99823e4cf571affff25a527c2dfe"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/Landing_Receiving_3_06_2_of_2.ab1": {
+      "checksum": "5771c4d3ff13275b1a181740f6a11bbd"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/PKD1_4_Target_Fix__1__07.ab1": {
+      "checksum": "85fe14d23e0b5c3679d9968b46c673c5"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/PKD1_4_Target_Fix__2__08.ab1": {
+      "checksum": "e37aabbaa480150f0269d8b3d11eaa28"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/PKD1_4_Target_Fix__3__09.ab1": {
+      "checksum": "899828497204fbbe21e03608ecb32b92"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/PKD1_4_Target_Fix__4__10.ab1": {
+      "checksum": "cacb607f8bd734417db6558c5d7102e7"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/PKD1_4_Target_Fix__5__11.ab1": {
+      "checksum": "c7a9e8998d61e5f48ae6b21cca7529cb"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_ab1_files/PKD1_4_Target_Fix__6__12.ab1": {
+      "checksum": "4c98bf247b96f700039d1aea3c939307"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_coverage_plots/Landing_Receiving_1_1__01.png": {
+      "checksum": "91ace9c9f6a3c78d8f20bd0f7009c8e7"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_coverage_plots/Landing_Receiving_1_2__02.png": {
+      "checksum": "b7afea2b99260dcc3394c25ec8599d2f"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_coverage_plots/Landing_Receiving_1_3__03.png": {
+      "checksum": "2bd8bf8fb20923c40efce02dd9e41083"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_coverage_plots/Landing_Receiving_1_4__04.png": {
+      "checksum": "f987a4d1252645bf10ffe81e02f7a75b"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_coverage_plots/Landing_Receiving_2_05.png": {
+      "checksum": "f61b810c5abd12ca2bc3f00ab3522567"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_coverage_plots/Landing_Receiving_3_06.png": {
+      "checksum": "34ba35d31f8287ddea779cd5b488b457"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_coverage_plots/PKD1_4_Target_Fix__1__07.png": {
+      "checksum": "8d2289ee10cb2071869f3dede6a8846e"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_coverage_plots/PKD1_4_Target_Fix__2__08.png": {
+      "checksum": "51bbcbbe34a6498869455206fa08abab"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_coverage_plots/PKD1_4_Target_Fix__3__09.png": {
+      "checksum": "eab28814a6ee9890537312b7e83e14c8"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_coverage_plots/PKD1_4_Target_Fix__4__10.png": {
+      "checksum": "9b739be7db00081a58d4929cc6f7546b"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_coverage_plots/PKD1_4_Target_Fix__5__11.png": {
+      "checksum": "41515e7b8429d7b8e6a95dbe67f1e07a"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_coverage_plots/PKD1_4_Target_Fix__6__12.png": {
+      "checksum": "4d951aea5b6edd7cc2db8d97f111e10d"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_coverage_plots/coverage_readme.txt": {
+      "checksum": "62dc69678c69f4a11d03cd777c669360"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_genbank_files/Landing_Receiving_1_1__01.gbk": {
+      "checksum": "e0ccc90dd09aa9659416050c07e7333a"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_genbank_files/Landing_Receiving_1_2__02.gbk": {
+      "checksum": "bd9effcffa33ed9ff72c3de79827da3e"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_genbank_files/Landing_Receiving_1_3__03.gbk": {
+      "checksum": "50d6eafca242f701a3d9333dea2a63c7"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_genbank_files/Landing_Receiving_1_4__04.gbk": {
+      "checksum": "73942d804cd8d792eae2a35a07691b48"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_genbank_files/Landing_Receiving_2_05.gbk": {
+      "checksum": "5572f5179a22f25e31414867102a2d8d"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_genbank_files/Landing_Receiving_3_06.gbk": {
+      "checksum": "b6625bcd6226003aeba87143dff504a1"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_genbank_files/PKD1_4_Target_Fix__1__07.gbk": {
+      "checksum": "419f3309e724d9d668c14f22cc841d7c"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_genbank_files/PKD1_4_Target_Fix__2__08.gbk": {
+      "checksum": "6963bfd5c3472c8ebbede1f875966070"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_genbank_files/PKD1_4_Target_Fix__3__09.gbk": {
+      "checksum": "9784ddb6796f0a24819922b61e6e9fcc"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_genbank_files/PKD1_4_Target_Fix__4__10.gbk": {
+      "checksum": "85c444af59429d4b04b8b1318a3acc61"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_genbank_files/PKD1_4_Target_Fix__5__11.gbk": {
+      "checksum": "f172d831434a0e960939be2f1c6faced"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_genbank_files/PKD1_4_Target_Fix__6__12.gbk": {
+      "checksum": "33177fdb98e592b15b886c0a3b9e46bd"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_histograms/Landing_Receiving_1_1__01.png": {
+      "checksum": "65d3cefa63489a34e65abe8fc10e89ec"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_histograms/Landing_Receiving_1_2__02.png": {
+      "checksum": "19af883009f8c65e048815f86ef60c26"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_histograms/Landing_Receiving_1_3__03.png": {
+      "checksum": "bfbad8c3c489e466a1e616a005cdea73"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_histograms/Landing_Receiving_1_4__04.png": {
+      "checksum": "45518288e258a15d69578fe116f67708"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_histograms/Landing_Receiving_2_05.png": {
+      "checksum": "1b2580d19f51cfccf9eef942e0a33268"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_histograms/Landing_Receiving_3_06.png": {
+      "checksum": "17c1f1c237991ba7bc4b69abe59fe39d"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_histograms/PKD1_4_Target_Fix__1__07.png": {
+      "checksum": "5faa7384974a4b073049abf6fc2df282"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_histograms/PKD1_4_Target_Fix__2__08.png": {
+      "checksum": "db77a74ffcca62561d832b319c3ba69b"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_histograms/PKD1_4_Target_Fix__3__09.png": {
+      "checksum": "1c2ce3b5b67a28c6cc45fc83df760da2"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_histograms/PKD1_4_Target_Fix__4__10.png": {
+      "checksum": "c1612294e8f785be4c35c5d447ae1a33"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_histograms/PKD1_4_Target_Fix__5__11.png": {
+      "checksum": "1159f122282aa0699748f2a9cd97e958"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_histograms/PKD1_4_Target_Fix__6__12.png": {
+      "checksum": "2a52c534c5a8a80ba33852f8bc3b91e8"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_histograms/histograms_readme.txt": {
+      "checksum": "94c6884f348fe91d8daa8ac310237d4d"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_per_base_data/Landing_Receiving_1_1__01.txt": {
+      "checksum": "b4a5dc850d1ecbd93ab7893ba61ea765"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_per_base_data/Landing_Receiving_1_2__02.txt": {
+      "checksum": "09fbc1dbb3606f04bea0c185e04d187e"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_per_base_data/Landing_Receiving_1_3__03.txt": {
+      "checksum": "3f5d305c8f2758ccb416134f0c80b10a"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_per_base_data/Landing_Receiving_1_4__04.txt": {
+      "checksum": "e6e32f83372f7ae50880fc3dbc6ac308"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_per_base_data/Landing_Receiving_2_05.txt": {
+      "checksum": "7bd407429dc229590475ba8d12bd88f2"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_per_base_data/Landing_Receiving_3_06.txt": {
+      "checksum": "b11749b6bfe9c0f4374f66bf0d9ad394"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_per_base_data/PKD1_4_Target_Fix__1__07.txt": {
+      "checksum": "d044b1f2d7cf78f0a533140f025fa5b6"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_per_base_data/PKD1_4_Target_Fix__2__08.txt": {
+      "checksum": "80e198e6556f1a8b1a4104fa5aadab29"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_per_base_data/PKD1_4_Target_Fix__3__09.txt": {
+      "checksum": "fd1c30d11b8f49eff1e16ce61dbbaafd"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_per_base_data/PKD1_4_Target_Fix__4__10.txt": {
+      "checksum": "d0a7654b611c388c3ce16a5247a278ef"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_per_base_data/PKD1_4_Target_Fix__5__11.txt": {
+      "checksum": "e5c6abdbf6dd45b46b4dcfa38d01ba6c"
+    },
+    "examples/LandingPKD_Target_sequencing/JKTXWW_per_base_data/PKD1_4_Target_Fix__6__12.txt": {
+      "checksum": "dc9ba05043412f6d62decd1d3dd3f8f0"
+    },
+    "examples/Sequencing forQC app/.DS_Store": {
+      "checksum": "cf56547893f70d9601d2033602e17a01"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/2VDBGC_1_3a4_2_1.tsv": {
+      "checksum": "9e4c2bdb5f547fe110f0cd3e07c4537c"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/2VDBGC_2_3a4_3_2.tsv": {
+      "checksum": "643cb9a319a41867db4eca5d2e7ea996"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/2VDBGC_3_3a4_1_3.tsv": {
+      "checksum": "f98101434199fa18967ed14ffb250329"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_ab1-files/LKDMYP_1_2c9_2__1.ab1": {
+      "checksum": "398350787d024036b12c07ea25fd8040"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_ab1-files/LKDMYP_2_2c9_7__2.ab1": {
+      "checksum": "647bb4beecdcb65667c8c4bcdfc7bcef"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_ab1-files/LKDMYP_3_NG_1__3.ab1": {
+      "checksum": "33fc1f16cf5fac71fd85fa0ddc159e48"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_ab1-files/LKDMYP_4_NG_6__4.ab1": {
+      "checksum": "1235999457128238b3236789c204d0fd"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_coverage-plots/LKDMYP_1_2c9_2__1.png": {
+      "checksum": "1a4165c89eb70ef1e524f1243844fded"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_coverage-plots/LKDMYP_2_2c9_7__2.png": {
+      "checksum": "961c606ad81e5407f8b1529cb4f6d7ba"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_coverage-plots/LKDMYP_3_NG_1__3.png": {
+      "checksum": "d1cbddb746a5801a5c4976a3d203289d"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_coverage-plots/LKDMYP_4_NG_6__4.png": {
+      "checksum": "9c450c1e35f4664ede751ac7d907148c"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_fasta-files/LKDMYP_1_2c9_2__1.fasta": {
+      "checksum": "6505283e1d493e275e0a0544f861cb8d"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_fasta-files/LKDMYP_2_2c9_7__2.fasta": {
+      "checksum": "796d3e54ccca2d08e3587325849ddce1"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_fasta-files/LKDMYP_3_NG_1__3.fasta": {
+      "checksum": "9e3e13a4e0bb6b072393000f6248f55f"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_fasta-files/LKDMYP_4_NG_6__4.fasta": {
+      "checksum": "19e985eb25e5b31ac4bcf05c6df50358"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_gel.png": {
+      "checksum": "3833ebbae5beb398d1a68f6e3d5f593a"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_genbank-files/LKDMYP_1_2c9_2__1.gbk": {
+      "checksum": "2be0bf47805e3381a17cc7dd0f586be8"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_genbank-files/LKDMYP_2_2c9_7__2.gbk": {
+      "checksum": "0c079084536904fe96f0d65801caa02d"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_genbank-files/LKDMYP_3_NG_1__3.gbk": {
+      "checksum": "43fba0964e111835b9d8a401a1c75371"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_genbank-files/LKDMYP_4_NG_6__4.gbk": {
+      "checksum": "d716eb9b8fa697e3c08098c6fc0b7c3b"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_histograms/LKDMYP_1_2c9_2__1.png": {
+      "checksum": "3e0b8d78021a94c701ad43452d7408b8"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_histograms/LKDMYP_2_2c9_7__2.png": {
+      "checksum": "7b6d7d97629abda8b55ef885f485d03d"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_histograms/LKDMYP_3_NG_1__3.png": {
+      "checksum": "34bb4ddfc780d4f33e0bd75cc451d2ea"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_histograms/LKDMYP_4_NG_6__4.png": {
+      "checksum": "feff5cd9b8b9ccc208a9c768b9a0f284"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_interactive-map/LKDMYP_1_2c9_2__1.html": {
+      "checksum": "eceac4e173f650b5fc8acccb0ae723e0"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_interactive-map/LKDMYP_2_2c9_7__2.html": {
+      "checksum": "2e92709cac7f266eaa224c9710e12b76"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_interactive-map/LKDMYP_3_NG_1__3.html": {
+      "checksum": "c7720c3b5d409e9f031c3e43f9ed8277"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_interactive-map/LKDMYP_4_NG_6__4.html": {
+      "checksum": "a3f582b698d9e625c39cb4e771ace20b"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_per-base-data/LKDMYP_1_2c9_2__1.tsv": {
+      "checksum": "c7822d1d9bb06f93d2b2935aededf601"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_per-base-data/LKDMYP_2_2c9_7__2.tsv": {
+      "checksum": "4ced140c1f151a2e5ca18246e0d00232"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_per-base-data/LKDMYP_3_NG_1__3.tsv": {
+      "checksum": "4949d99f51b2b706837a865bb0448afa"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_per-base-data/LKDMYP_4_NG_6__4.tsv": {
+      "checksum": "94c119e46bab14e7fc3484ca7e663403"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_summary-files/LKDMYP_1_2c9_2__1.txt": {
+      "checksum": "25d74dab712d6a193810b88516601aff"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_summary-files/LKDMYP_2_2c9_7__2.txt": {
+      "checksum": "b88a785e62fb3b1f3e2e07f837cfa4ce"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_summary-files/LKDMYP_3_NG_1__3.txt": {
+      "checksum": "3c92f019f5f8380e5b2dd91a471a729f"
+    },
+    "examples/Sequencing forQC app/GoodTSV results/LKDMYP_results/LKDMYP_summary-files/LKDMYP_4_NG_6__4.txt": {
+      "checksum": "a11dd6f9750a1216a5dc5ca8964cc914"
+    },
+    "examples/Sequencing forQC app/Pxrand cyp_twist/CYP1A2.dna": {
+      "checksum": "b591db89db3534b953faa74a42837b21"
+    },
+    "examples/Sequencing forQC app/Pxrand cyp_twist/CYP2C9.dna": {
+      "checksum": "a086f53afc453a65972ca9b499a6cc51"
+    },
+    "examples/Sequencing forQC app/Pxrand cyp_twist/CYP2D6.dna": {
+      "checksum": "c0145080271bb7dff4e0a807be5f6a59"
+    },
+    "examples/Sequencing forQC app/Pxrand cyp_twist/CYP3A4.dna": {
+      "checksum": "0847dc6e231b8e33c8147d9b1d9d1f8f"
+    },
+    "examples/Sequencing forQC app/Pxrand cyp_twist/twist_CYP2D6_reorder.gb": {
+      "checksum": "0107ec7af4b4e385c8d2ddf86fdb41ac"
+    },
+    "examples/Sequencing forQC app/Pxrand cyp_twist/twist_cyp1a2.dna": {
+      "checksum": "35b6f4e8a4c257b9b3aa6c12db445d26"
+    },
+    "examples/Sequencing forQC app/Pxrand cyp_twist/twist_cyp2c9.dna": {
+      "checksum": "983f714c06697392a74f43d98c389cbb"
+    },
+    "examples/Sequencing forQC app/Pxrand cyp_twist/twist_cyp2d6.dna": {
+      "checksum": "a206d4242ed0e22a5b131798c7726b0b"
+    },
+    "examples/Sequencing forQC app/Pxrand cyp_twist/twist_cyp3a4.dna": {
+      "checksum": "6b70a68431767b2847c13a5d0e564584"
+    },
+    "examples/Sequencing forQC app/cyp2c9_1Missing_insert_premiumpcr.tsv": {
+      "checksum": "be1c2cfb0b722387bed4d0f819f06643"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_ab1-files/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.ab1": {
+      "checksum": "83c197510fd93886aeb2a4e11958d1d8"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_ab1-files/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.ab1": {
+      "checksum": "a1b602a0d105b739fcce7ed4a59730b3"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_coverage-plots/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.png": {
+      "checksum": "99d820d7940bfd284cc990b7a560f1a9"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_coverage-plots/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.png": {
+      "checksum": "61baa0ff516f02c71ab003114f2e9b55"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_fasta-files/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.fasta": {
+      "checksum": "921333cf9ea7d122bc21811db1dc687e"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_fasta-files/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.fasta": {
+      "checksum": "298d135e1dcd180e45325ef44e253043"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_gel.png": {
+      "checksum": "da543054b2201c5a01b0f215a2c5d4ee"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_genbank-files/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.gbk": {
+      "checksum": "c5fbe60aa773b37bd6a5f106c66364ae"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_genbank-files/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.gbk": {
+      "checksum": "da538265b4d2e7e121ed969d44eff8e1"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_histograms/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.png": {
+      "checksum": "cdba3a76ef5c67a17b53aa5cb7f8e484"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_histograms/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.png": {
+      "checksum": "c1c0f0e9b29b8ac2ff8f3145b87b418b"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_interactive-map/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.html": {
+      "checksum": "27e2eb076ac336ad07247bc5b8091949"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_interactive-map/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.html": {
+      "checksum": "fe7bef27578836fa8bf4b23967d85e1c"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_per-base-data/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.tsv": {
+      "checksum": "7f3b709af8a1fa2b6946ee79a62a99e9"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_per-base-data/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.tsv": {
+      "checksum": "c8b2b6ebdfc90a8a3dc3e4700ea16671"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_summary-files/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.txt": {
+      "checksum": "fe5c37d8918ba6e5f756e2f766ed447b"
+    },
+    "examples/Sequencing forQC app/cyp2c9_missinginsert&3a4(good)/BWLT34_summary-files/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.txt": {
+      "checksum": "740f15a3267bdd03a70be4b8a7d40ef8"
+    },
+    "examples/bad_ref.fasta": {
       "checksum": "acfb4a3bce373829ec94d7c4d2c552ca"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/.DS_Store": {
+      "checksum": "770afb9036998827889e757dff2d9bc9"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_ab1-files/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.ab1": {
+      "checksum": "83c197510fd93886aeb2a4e11958d1d8"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_ab1-files/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.ab1": {
+      "checksum": "a1b602a0d105b739fcce7ed4a59730b3"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_coverage-plots/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.png": {
+      "checksum": "99d820d7940bfd284cc990b7a560f1a9"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_coverage-plots/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.png": {
+      "checksum": "61baa0ff516f02c71ab003114f2e9b55"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_fasta-files/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.fasta": {
+      "checksum": "921333cf9ea7d122bc21811db1dc687e"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_fasta-files/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.fasta": {
+      "checksum": "298d135e1dcd180e45325ef44e253043"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_gel.png": {
+      "checksum": "da543054b2201c5a01b0f215a2c5d4ee"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_genbank-files/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.gbk": {
+      "checksum": "c5fbe60aa773b37bd6a5f106c66364ae"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_genbank-files/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.gbk": {
+      "checksum": "da538265b4d2e7e121ed969d44eff8e1"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_histograms/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.png": {
+      "checksum": "cdba3a76ef5c67a17b53aa5cb7f8e484"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_histograms/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.png": {
+      "checksum": "c1c0f0e9b29b8ac2ff8f3145b87b418b"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_interactive-map/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.html": {
+      "checksum": "27e2eb076ac336ad07247bc5b8091949"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_interactive-map/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.html": {
+      "checksum": "fe7bef27578836fa8bf4b23967d85e1c"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_per-base-data/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.tsv": {
+      "checksum": "7f3b709af8a1fa2b6946ee79a62a99e9"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_per-base-data/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.tsv": {
+      "checksum": "c8b2b6ebdfc90a8a3dc3e4700ea16671"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_summary-files/BWLT34_1_cyp2c9_1_wholeplasmid_seq_missing_insert.txt": {
+      "checksum": "fe5c37d8918ba6e5f756e2f766ed447b"
+    },
+    "examples/cyp2c9_missinginsert&3a4(good)/BWLT34_summary-files/BWLT34_2_cyp3a4_1_wholeplasmid_seq_gucci.txt": {
+      "checksum": "740f15a3267bdd03a70be4b8a7d40ef8"
     },
     "input_checkbox_group_tooltips.py": {
       "checksum": "9d522bfb4f6e390dc82e5a88956973de"
+    },
+    "notes/20250314_willow_update.pptx": {
+      "checksum": "e909748fdd62adc0b5727bdbd199e607"
     },
     "plotly_plots.py": {
       "checksum": "fdc264a6036da42e49c705c9f2f4e7fe"
@@ -57,13 +672,16 @@
       "checksum": "13e9c08d31da20b9444b72a9c940e6f1"
     },
     "process_data.py": {
-      "checksum": "33bc3b19c8013dd3ef063653a3a1d165"
+      "checksum": "9c1fb16dd5789a01b4afd5cd008aeaad"
     },
-    "scratch.txt": {
-      "checksum": "523d101a48ca5662c079fc256535bd09"
+    "process_reference.py": {
+      "checksum": "da359267c663ad4c26eb885ea57d038d"
+    },
+    "scratch.py": {
+      "checksum": "68a2bd610d0398e571d50d545f1d31d6"
     },
     "shared.py": {
-      "checksum": "d7ee551cf9f04adb1e1993e5d00cb041"
+      "checksum": "588a75a499638d4c00dfe943a7994c0c"
     },
     "styles.css": {
       "checksum": "95d894b2af82419f0fe1386fb9078ab8"
