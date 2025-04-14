@@ -167,25 +167,23 @@ def process_per_base_file(
 
 def update_per_base_df(
     per_base_df: pd.DataFrame,
-    selected_range_low: int,
-    selected_range_high: int,
-    parsed_reference: dict[str, str | list | None] | None,
+    selected_range_list: list[tuple[int, int]],
 ) -> None:
 
     if per_base_df.empty:
         return
 
-    selected_positions = list(range(selected_range_low, selected_range_high))
+    # Parse the list of tuples to get the selected range
 
-    if parsed_reference:
-        for feature in parsed_reference["features"]:
-            if feature:
-                if feature.type != "source":
-                    start = int(feature.location.start)
-                    end = int(feature.location.end)
-                    selected_positions += list(range(start, end))
+    selected_positions = []
 
-    selected_codon_range = range(selected_range_low // 3, selected_range_high // 3)
+    print(f"Selected_range_list: {selected_range_list}")
+    for selected_range in selected_range_list:
+        print(f"Selected_range: {selected_range}")
+        selected_positions += set(range(selected_range[0], selected_range[1]))
+
+    # print(f"Selected_positions: {selected_positions}")
+
     subpool_codon_fraction = 3 / (len(selected_positions) + 1)
 
     per_base_df["is_selected"] = per_base_df["pos"].isin(selected_positions)
@@ -197,6 +195,24 @@ def update_per_base_df(
     per_base_df["variant_fraction_percent"] = (
         (4 / 3) * per_base_df["variant_fraction"] / subpool_codon_fraction
     ).replace([np.inf, -np.inf], np.nan)
+
+    return
+
+
+def update_per_base_df_with_reference(
+    per_base_df: pd.DataFrame,
+    features: list,
+) -> None:
+    if per_base_df.empty:
+        return pd.DataFrame()
+
+    # Update the DataFrame with reference information
+    update_per_base_df(
+        per_base_df, selected_range_low, selected_range_high, parsed_reference
+    )
+
+    # Align reference to variants
+    per_base_df = align_ref_to_variants(per_base_df, parsed_reference["sequence"])
 
     return
 

@@ -44,7 +44,7 @@ def align_ref_to_variants(
     return per_base_df
 
 
-def process_reference_fasta(file) -> dict[str, str | list | None] | None:
+def process_reference_fasta(file) -> dict[str, dict | None] | None:
 
     try:
         fasta_record = list(SeqIO.parse(file[0]["datapath"], "fasta"))
@@ -60,7 +60,7 @@ def process_reference_fasta(file) -> dict[str, str | list | None] | None:
     return {"sequence": sequence, "features": None}
 
 
-def process_reference_genbank(file) -> dict[str, str | list | None] | None:
+def process_reference_genbank(file) -> dict[str, dict | None] | None:
     try:
         genbank_record = list(SeqIO.parse(file[0]["datapath"], "genbank"))
     except Exception:
@@ -71,9 +71,30 @@ def process_reference_genbank(file) -> dict[str, str | list | None] | None:
         genbank_record = list(genbank_record)[0]
         sequence = str(genbank_record.seq)
 
-        # TODO: does features always return a list? Check
         features = genbank_record.features
     else:
         return None
 
-    return {"sequence": sequence, "features": features}
+    features_dict = {}
+    for feature in features:
+        try:
+            print(type(feature.qualifiers))
+            if "label" in feature.qualifiers:
+                print("Label(s) found")
+                print(len(feature.qualifiers["label"]))
+                print(feature.qualifiers["label"])
+                print(feature.qualifiers["label"][0])
+                feature_name = feature.qualifiers["label"][0]
+            else:
+                feature_name = feature.type
+            print(feature_name)
+
+            features_dict[feature_name] = feature
+        except AttributeError:
+            print("AttributeError")
+            print(feature)
+            continue
+
+    print(features_dict)
+
+    return {"sequence": sequence, "features": features_dict}

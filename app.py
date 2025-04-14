@@ -1,6 +1,5 @@
 import pandas as pd
 
-from scipy.stats import f
 from shiny import reactive
 from shiny.express import input, render, ui
 from shiny.types import FileInfo
@@ -46,7 +45,7 @@ class AppState:
         self.selected_mean_values = reactive.value(pd.DataFrame())
         self.full_mean_values = reactive.value(pd.DataFrame())
         self.selected_features = reactive.value([])
-        self.reference_data = reactive.value(dict())
+        self.reference_data = reactive.value(None)
         self.summary_metrics = reactive.value(pd.DataFrame())
 
 
@@ -131,14 +130,17 @@ with ui.sidebar(title="Settings"):
         feature_names = ["None"]
         features = None
 
-        if parsed_reference():
+        if parsed_reference() is not None:
             if parsed_reference()["features"]:
                 features = parsed_reference()["features"]
-                feature_names = [
-                    feature.qualifiers["label"][0]
-                    for feature in features
-                    if "label" in feature.qualifiers
-                ]
+                print(f"Type of features: {type(features)}")
+                feature_names = (
+                    list(features.keys()) if isinstance(features, dict) else []
+                )
+            else:
+                return None
+        else:
+            return None
 
         return ui.input_selectize(
             "selected_features",
@@ -295,7 +297,7 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 # Reactive calcs
 # Parse the input reference FASTA. Only handle single-sequence FASTA files.
 @reactive.calc
-def parsed_reference() -> dict[str, str | list | None] | None:
+def parsed_reference() -> dict[str, dict | None] | None:
     """Parse reference file (FASTA or GenBank) and return dict with sequence string and
     feature objects (if present)."""
     file = input.reference_file()
@@ -312,6 +314,7 @@ def parsed_reference() -> dict[str, str | list | None] | None:
         return None
 
     app_state.reference_data.set(result)
+
     return result
 
 
@@ -389,14 +392,86 @@ def test_results():
 def update_data_selected_range():
     """Update data selection when range changes."""
 
+    print("updating data selected range")
+    print(f"Selected features: {input.selected_features()}")
+    print(f"Selected features state: {app_state.selected_features.get()}")
+
     if app_state.processed_data.get().empty:
         return
 
+    selected_range = [(input.min_pos(), input.max_pos())]
+
     update_per_base_df(
         app_state.processed_data.get(),
-        input.min_pos(),
-        input.max_pos(),
-        app_state.reference_data.get(),
+        selected_range,
+    )
+
+
+@reactive.effect
+@reactive.event(input.selected_features, app_state.selected_features)
+def update_data_selected_range_features():
+    """Update selected range when features are selected."""
+    print("updating data selected range features")
+
+    if app_state.processed_data.get().empty:
+        return
+    app_state.selected_features.set(input.selected_features())
+    print(f"Type of input.selected_features: {type(input.selected_features())}")
+    print(f"Selected features input: {input.selected_features()}")
+
+    print(f"Type of app_state.processed_data: {type(app_state.processed_data.get())}")
+    print(
+        f"Type of app_state.selected_features: {type(app_state.selected_features.get())}"
+    )
+    print(f"Type of app_state.reference_data: {type(app_state.reference_data.get())}")
+    print(f"Keys of app_state.reference_data: {app_state.reference_data.get().keys()}")
+    print(
+        f'Keys of features in app_state.reference_data: {app_state.reference_data.get()["features"].keys()}'
+    )
+    try:
+        print(
+            f'Type of app_state.reference_data: {type(app_state.reference_data.get()["features"])}'
+        )
+    except TypeError:
+        print("app_state.reference_data is None")
+    print(f"Selected features: {app_state.selected_features.get()}")
+
+    selected_range = []
+    if not app_state.reference_data.get():
+        print("No reference data")
+        return
+    if not app_state.selected_features.get():
+        print("No selected features")
+        return
+    if not app_state.reference_data.get():
+        print("No features in reference data")
+        return
+
+    # Add the feature ranges to selected range
+    for feature in app_state.selected_features.get():
+        print(f"Selected feature: {feature}")
+        if feature in app_state.reference_data.get()["features"]:
+            print(
+                f'Feature start: {app_state.reference_data.get()["features"][feature].location.start}, feature end: {app_state.reference_data.get()["features"][feature].location.end}'
+            )
+            selected_range.append(
+                (
+                    int(
+                        app_state.reference_data.get()["features"][
+                            feature
+                        ].location.start
+                    ),
+                    int(
+                        app_state.reference_data.get()["features"][feature].location.end
+                    ),
+                )
+            )
+
+    print(selected_range)
+
+    update_per_base_df(
+        app_state.processed_data.get(),
+        selected_range,
     )
 
 
@@ -427,6 +502,8 @@ def update_last_selected_series():
 @reactive.effect
 @reactive.event(input.min_pos, input.max_pos)
 def validate_range():
+    print("updating range")
+    print(f"Min pos:", input.min_pos())
     # Minimum should be strictly less than maximum
     if input.min_pos() >= input.max_pos():
         ui.update_numeric("min_pos", value=input.max_pos() - 1)

@@ -20,6 +20,7 @@ column_names_dict = {
     "indel_substitution_ratio": "Indel to substitution ratio",
     "alignment_mismatch": "red",
     "max_variant_base": "Max counts non-ref base",
+    "is_selected": "Is selected",
 }
 
 column_colors_dict = {
@@ -51,12 +52,14 @@ column_tooltips = {
     "indel_fraction": "Fraction of reads with indels at each position.",
     "indel_substitution_ratio": "Ratio of indels to substitutions at each position.",
     "max_variant_base": "Counts of the most common non-reference base.",
+    "is_selected": "Whether the position is selected for further analysis.",
 }
 
 # Columns to show in tabular form
 tabular_cols = [
     "pos",
     "ref",
+    "is_selected",
     "aligned_ref",
     "A",
     "C",
