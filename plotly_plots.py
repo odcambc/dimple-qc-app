@@ -17,6 +17,7 @@ def base_position_vs_value_plot_plotly(
     selected_range_high: int,
     last_selected_series: str,
     show_means: bool,
+    feature_regions: list[dict] | None = None,
 ) -> go.Figure:
     if per_base_df.empty:
         return empty_fig
@@ -50,6 +51,21 @@ def base_position_vs_value_plot_plotly(
     fig.add_vline(
         x=selected_range_high, line_width=1, line_dash="dash", line_color="black"
     )
+
+    # Draw shaded regions for annotated genomic features (e.g. CDS)
+    if feature_regions:
+        for region in feature_regions:
+            fig.add_vrect(
+                x0=region["start"],
+                x1=region["end"],
+                fillcolor=region.get("color", "rgba(100, 100, 255, 0.15)"),
+                layer="below",
+                line_width=0,
+                annotation_text=region.get("label", ""),
+                annotation_position="top left",
+                annotation_font_size=10,
+                annotation_font_color="gray",
+            )
 
     if show_means and not mean_values.empty:
         mean_col = f"{last_selected_series}_mean"
