@@ -110,6 +110,6 @@ def processed_test_data(
     """Processed data with a selected region that differs from unselected."""
     processed = process_per_base_file(variant_region_per_base_df, False)
     updated = update_per_base_df(processed, [(30, 60)])
-    selected_means = update_mean_values_per_base(updated, 30, 60)
+    selected_means = update_mean_values_per_base(updated)
     full_means = process_full_mean_values(updated)
     return updated, selected_means, full_means

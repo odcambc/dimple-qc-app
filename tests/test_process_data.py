@@ -182,13 +182,13 @@ class TestProcessFullMeanValues:
 
 class TestUpdateMeanValuesPerBase:
     def test_empty_input(self):
-        result = update_mean_values_per_base(pd.DataFrame(), 0, 100)
+        result = update_mean_values_per_base(pd.DataFrame())
         assert not result.empty  # Structured NaN DataFrame
 
     def test_with_data(self, minimal_per_base_df):
         processed = process_per_base_file(minimal_per_base_df, False)
         # Mark some as selected, some not
         updated = update_per_base_df(processed, [(2, 4)])
-        result = update_mean_values_per_base(updated, 2, 4)
+        result = update_mean_values_per_base(updated)
         assert "selected" in result.index
         assert "unselected" in result.index
