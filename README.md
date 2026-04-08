@@ -40,10 +40,37 @@ This will also allow one more metric to be calculated:
 
 The app is designed to parse the results of whole-plasmid sequencing from [Plasmidsaurus](https://plasmidsaurus.com/), and thus uses a non-standard format. The app uses the per-base csv file provided in the "(sample name)_per-base-data" folder.
 
-## Usage
+## Installation
 
-This is meant to be deployed as a Shiny app. It can be installed locally using the requirements.txt file and running the app.py script. A basic Dockerfile is also provided.
+This is meant to be deployed as a Shiny app. It can be installed locally by either adding the dependencies to your environment manager of choice, or by using the provided Dockerfile, then running the app.py script.
 
+### Install with uv (recommended)
+
+```bash
+uv sync
+uv run shiny run
+```
+
+### Install with poetry
+
+```bash
+poetry install
+poetry run shiny run
+```
+
+### Install with pip
+
+```bash
+pip install -r requirements.txt
+python app.py
+```
+
+### Install with Docker
+
+```bash
+docker build -t dimple-qc-app .
+docker run -p 8080:8080 dimple-qc-app
+```
 
 ## Caveats
 

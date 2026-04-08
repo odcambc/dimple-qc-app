@@ -1,17 +1,18 @@
 FROM python:3.13
 
-ENV APP_HOME /app
+ENV APP_HOME=/app
 WORKDIR $APP_HOME
 
-# Allow statements and log messages to immediately appear in the Knative logs
-ENV PYTHONUNBUFFERED True
-ENV PORT 8080
+ENV PYTHONUNBUFFERED=1
+ENV PORT=8080
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-RUN pip install --no-cache-dir --upgrade shiny
-RUN pip install -r requirements.txt
 
-# Run app on port 8080
-EXPOSE ${PORT}
-ENTRYPOINT ["shiny", "run", "app.py", "--host", "0.0.0.0", "--port", "80"]
+EXPOSE 8080
 
+# Listen on all interfaces; honor PORT from the host (e.g. Cloud Run, Knative).
+ENTRYPOINT ["sh", "-c", "exec shiny run app.py --host 0.0.0.0 --port ${PORT:-8080}"]
