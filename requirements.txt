@@ -18,6 +18,29 @@ asttokens==3.0.1 \
     --hash=sha256:15a3ebc0f43c2d0a50eeafea25e19046c68398e487b9f1f5b517f7c0f40f976a \
     --hash=sha256:71a4ee5de0bde6a31d64f6b13f2293ac190344478f081c3d1bccfcf5eacb0cb7
     # via stack-data
+biopython==1.87 \
+    --hash=sha256:01ee30203bd4b2145cdfe2878499e549a7087f897a6f4d1ebd9de30790123140 \
+    --hash=sha256:331c4151608a1d8406eff0d3c52a0ff1fa3e82604fc85f11c696c562919fb161 \
+    --hash=sha256:3670d76759c6cb53ba617f9823d3a438c1aa5415abef6addd29cb81d61d7b312 \
+    --hash=sha256:65ba69ef0273e983a9036c2a228142bc34266179a5f03660fc281d332d718630 \
+    --hash=sha256:6d221b2e08e7e89713fdbfb15c8ea6744e908d59f672cd2b6fcf9ed47910d05e \
+    --hash=sha256:772539297fa16a78f38651c793f53f8c11bd18317b111982e72cf30a6e57512a \
+    --hash=sha256:77ccc634621904d4a8fa0a43b5e0f093fa9df8c9577ed3858af648bb3528f51e \
+    --hash=sha256:8456c803459b679a9712422e5a7fd9809f2f089bf69bb085f3b077946ac9bdbf \
+    --hash=sha256:856e3d64f1f27db493474ff84916ed8572731a525e001c7d0d8f41a0fd187000 \
+    --hash=sha256:89ffe272517478691439a59cccd3cc2929fc8f6bfb8cbc8cc5acc103660395a7 \
+    --hash=sha256:98e397096336a49804b6aaaeac8c47ad82e3e4430862f0cde37be73037f1017e \
+    --hash=sha256:a3428155c3e0abbed7aad5ff08e034d435b84dfe560c8ec58e7d43abda4b6a43 \
+    --hash=sha256:a6fcec2e3602ed52ced701f8f7851952383f84dbc4caeb4d202d088170e86b6d \
+    --hash=sha256:b077777fd2c555434bdcee58743f6f860aa80e1e005d9671913aa73823c6a773 \
+    --hash=sha256:c8da2d44a4b912c7550a051a5ff4bb72a61decc9c4b19ea92cba4c02fffb143c \
+    --hash=sha256:d740c75d4bc94f9dff51719a0deda37e5e885f06ee6dfbb5e9a21bbe9de35a9c \
+    --hash=sha256:db73fe16aa2b20677ac86d1997612acb0aa1a3720bc899f65d2bce5583208e1b \
+    --hash=sha256:e05ef5d632c319ab3ef77705c74061190d0792b07e1f2b9eee867401b2758e7e \
+    --hash=sha256:e4878a9b56775480154c686f81e98f6d907b44d87605bdc2f53538ccdfde9624 \
+    --hash=sha256:fab1b12f6bc4646b7f56b4c390ecff685f02b5b29e3a0c10477195bb49fe62f8 \
+    --hash=sha256:ff28a6f31630b3c9f52903478a2ed9dd894b07c1998e40eaeefbeefac20f2d0f
+    # via dimple-qc-app
 click==8.3.2 ; sys_platform != 'emscripten' \
     --hash=sha256:14162b8b3b3550a7d479eafa77dfd3c38d9dc8951f6f69c78913a8f9a7540fd5 \
     --hash=sha256:1924d2c27c5653561cd2cae4548d1406039cb79b858b747cfea24924bbc1616d
@@ -30,6 +53,7 @@ colorama==0.4.6 ; sys_platform == 'win32' \
     # via
     #   click
     #   ipython
+    #   pytest
 comm==0.2.3 \
     --hash=sha256:2dc8048c10962d55d7ad693be1e7045d891b7ce8d999c97963a5e3e99c055971 \
     --hash=sha256:c615d91d75f7f04f095b30d1c1711babd43bdc6419c1be9886a85f2f4e489417
@@ -163,6 +187,10 @@ importlib-metadata==8.7.1 \
     --hash=sha256:49fef1ae6440c182052f407c8d34a68f72efc36db9ca90dc0113398f2fdde8bb \
     --hash=sha256:5a1f80bf1daa489495071efbb095d75a634cf28a8bc299581244063b53176151
     # via opentelemetry-api
+iniconfig==2.3.0 \
+    --hash=sha256:c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730 \
+    --hash=sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12
+    # via pytest
 ipython==9.12.0 \
     --hash=sha256:01daa83f504b693ba523b5a407246cabde4eb4513285a3c6acaff11a66735ee4 \
     --hash=sha256:0f2701e8ee86e117e37f50563205d36feaa259d2e08d4a6bc6b6d74b18ce128d
@@ -394,6 +422,7 @@ numpy==2.4.4 \
     --hash=sha256:f9e75681b59ddaa5e659898085ae0eaea229d054f2ac0c7e563a62205a700121 \
     --hash=sha256:fbc356aae7adf9e6336d336b9c8111d390a05df88f1805573ebb0807bd06fd1d
     # via
+    #   biopython
     #   contourpy
     #   matplotlib
     #   pandas
@@ -460,6 +489,7 @@ packaging==26.0 \
     #   htmltools
     #   matplotlib
     #   plotly
+    #   pytest
     #   shiny
     #   statsmodels
 pandas==3.0.2 \
@@ -593,6 +623,10 @@ plotly==6.6.0 \
     --hash=sha256:8d6daf0f87412e0c0bfe72e809d615217ab57cc715899a1e5145135a7800d1d0 \
     --hash=sha256:b897f15f3b02028d69f755f236be890ba950d0a42d7dfc619b44e2d8cea8748c
     # via dimple-qc-app
+pluggy==1.6.0 \
+    --hash=sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3 \
+    --hash=sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746
+    # via pytest
 prompt-toolkit==3.0.52 \
     --hash=sha256:28cde192929c8e7321de85de1ddbe736f1375148b02f2e17edd840042b1be855 \
     --hash=sha256:9aac639a3bbd33284347de5ad8d68ecc044b91a762dc39b7c21095fcd6a19955
@@ -633,10 +667,14 @@ pygments==2.20.0 \
     # via
     #   ipython
     #   ipython-pygments-lexers
+    #   pytest
 pyparsing==3.3.2 \
     --hash=sha256:850ba148bd908d7e2411587e247a1e4f0327839c40e2e5e6d05a007ecc69911d \
     --hash=sha256:c777f4d763f140633dcb6d8a3eda953bf7a214dc4eff598413c070bcdc117cbc
     # via matplotlib
+pytest==9.0.3 \
+    --hash=sha256:2c5efc453d45394fdd706ade797c0a81091eccd1d6e4bccfcd476e2b8e0ab5d9 \
+    --hash=sha256:b86ada508af81d19edeb213c681b1d48246c1a91d304c6c81a427674c17eb91c
 python-dateutil==2.9.0.post0 \
     --hash=sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3 \
     --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427

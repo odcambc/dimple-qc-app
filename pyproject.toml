@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "biopython>=1.87",
     "faicons>=0.2.2",
     "matplotlib>=3.10.8",
     "pandas>=3.0.2",

@@ -48,7 +48,14 @@ This is meant to be deployed as a Shiny app. It can be installed locally by eith
 
 ```bash
 uv sync
-uv run app.py
+uv run shiny run
+```
+
+### Install with poetry
+
+```bash
+poetry install
+poetry run shiny run
 ```
 
 ### Install with pip
@@ -57,15 +64,6 @@ uv run app.py
 pip install -r requirements.txt
 python app.py
 ```
-
-### Install with poetry
-
-```bash
-poetry install
-poetry run app.py
-```
-
-
 
 ### Install with Docker
 
