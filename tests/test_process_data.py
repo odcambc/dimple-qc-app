@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import pytest
 
 from process_data import (
     compute_entropy,
@@ -12,41 +11,6 @@ from process_data import (
     process_full_mean_values,
     update_mean_values_per_base,
 )
-
-
-@pytest.fixture
-def base_counts_df():
-    """DataFrame with known base counts for testing helper functions."""
-    return pd.DataFrame(
-        {
-            "ref": ["A", "C", "G", "T"],
-            "A": [100, 5, 10, 8],
-            "C": [5, 200, 7, 12],
-            "G": [3, 4, 150, 6],
-            "T": [2, 6, 3, 180],
-        }
-    )
-
-
-@pytest.fixture
-def per_base_df():
-    """Minimal valid per-base DataFrame matching the expected input format."""
-    return pd.DataFrame(
-        {
-            "pos": [1, 2, 3, 4, 5, 6],
-            "ref": ["A", "C", "G", "T", "A", "C"],
-            "reads_all": [200, 200, 200, 200, 200, 200],
-            "matches": [190, 195, 185, 192, 188, 196],
-            "mismatches": [10, 5, 15, 8, 12, 4],
-            "deletions": [1, 0, 2, 1, 0, 1],
-            "insertions": [0, 1, 0, 0, 2, 0],
-            "low_conf": [0, 0, 0, 0, 0, 0],
-            "A": [180, 5, 10, 8, 170, 4],
-            "C": [5, 185, 7, 12, 10, 186],
-            "G": [3, 4, 175, 6, 8, 4],
-            "T": [2, 6, 3, 170, 7, 6],
-        }
-    )
 
 
 class TestComputeNVariants:
@@ -130,13 +94,13 @@ class TestProcessPerBaseFile:
         result = process_per_base_file(pd.DataFrame(), False)
         assert result.empty
 
-    def test_does_not_mutate_input(self, per_base_df):
-        original = per_base_df.copy()
-        process_per_base_file(per_base_df, False)
-        pd.testing.assert_frame_equal(per_base_df, original)
+    def test_does_not_mutate_input(self, minimal_per_base_df):
+        original = minimal_per_base_df.copy()
+        process_per_base_file(minimal_per_base_df, False)
+        pd.testing.assert_frame_equal(minimal_per_base_df, original)
 
-    def test_output_columns(self, per_base_df):
-        result = process_per_base_file(per_base_df, False)
+    def test_output_columns(self, minimal_per_base_df):
+        result = process_per_base_file(minimal_per_base_df, False)
         expected_cols = [
             "n_variants", "n_indels", "n_total", "variant_fraction",
             "indel_fraction", "entropy", "effective_entropy",
@@ -146,20 +110,20 @@ class TestProcessPerBaseFile:
         for col in expected_cols:
             assert col in result.columns, f"Missing column: {col}"
 
-    def test_all_selected_by_default(self, per_base_df):
-        result = process_per_base_file(per_base_df, False)
+    def test_all_selected_by_default(self, minimal_per_base_df):
+        result = process_per_base_file(minimal_per_base_df, False)
         assert result["is_selected"].all()
 
-    def test_reverse_complement_positions(self, per_base_df):
-        result = process_per_base_file(per_base_df, True)
+    def test_reverse_complement_positions(self, minimal_per_base_df):
+        result = process_per_base_file(minimal_per_base_df, True)
         # Positions should be reversed: max_pos - pos + 1
-        max_pos = per_base_df["pos"].max()
-        expected_positions = sorted(max_pos - per_base_df["pos"] + 1)
+        max_pos = minimal_per_base_df["pos"].max()
+        expected_positions = sorted(max_pos - minimal_per_base_df["pos"] + 1)
         assert sorted(result["pos"].tolist()) == expected_positions
 
-    def test_reverse_complement_bases(self, per_base_df):
-        result_fwd = process_per_base_file(per_base_df, False)
-        result_rev = process_per_base_file(per_base_df, True)
+    def test_reverse_complement_bases(self, minimal_per_base_df):
+        result_fwd = process_per_base_file(minimal_per_base_df, False)
+        result_rev = process_per_base_file(minimal_per_base_df, True)
 
         complement = {"A": "T", "T": "A", "C": "G", "G": "C"}
 
@@ -170,19 +134,19 @@ class TestProcessPerBaseFile:
 
 
 class TestUpdatePerBaseDf:
-    def test_does_not_mutate_input(self, per_base_df):
-        processed = process_per_base_file(per_base_df, False)
+    def test_does_not_mutate_input(self, minimal_per_base_df):
+        processed = process_per_base_file(minimal_per_base_df, False)
         original = processed.copy()
         update_per_base_df(processed, [(2, 4)])
         pd.testing.assert_frame_equal(processed, original)
 
-    def test_returns_dataframe(self, per_base_df):
-        processed = process_per_base_file(per_base_df, False)
+    def test_returns_dataframe(self, minimal_per_base_df):
+        processed = process_per_base_file(minimal_per_base_df, False)
         result = update_per_base_df(processed, [(2, 4)])
         assert isinstance(result, pd.DataFrame)
 
-    def test_selection_range(self, per_base_df):
-        processed = process_per_base_file(per_base_df, False)
+    def test_selection_range(self, minimal_per_base_df):
+        processed = process_per_base_file(minimal_per_base_df, False)
         result = update_per_base_df(processed, [(2, 4)])
         # Positions 2, 3 should be selected; 1, 4, 5, 6 should not
         selected_pos = result[result["is_selected"]]["pos"].tolist()
@@ -191,8 +155,8 @@ class TestUpdatePerBaseDf:
         assert 1 not in selected_pos
         assert 4 not in selected_pos
 
-    def test_multiple_ranges(self, per_base_df):
-        processed = process_per_base_file(per_base_df, False)
+    def test_multiple_ranges(self, minimal_per_base_df):
+        processed = process_per_base_file(minimal_per_base_df, False)
         result = update_per_base_df(processed, [(1, 2), (5, 6)])
         selected_pos = result[result["is_selected"]]["pos"].tolist()
         assert 1 in selected_pos
@@ -210,8 +174,8 @@ class TestProcessFullMeanValues:
         assert not result.empty  # Should return structured NaN DataFrame
         assert all(result.isna().all())
 
-    def test_with_data(self, per_base_df):
-        processed = process_per_base_file(per_base_df, False)
+    def test_with_data(self, minimal_per_base_df):
+        processed = process_per_base_file(minimal_per_base_df, False)
         result = process_full_mean_values(processed)
         assert not result.empty
 
@@ -221,8 +185,8 @@ class TestUpdateMeanValuesPerBase:
         result = update_mean_values_per_base(pd.DataFrame(), 0, 100)
         assert not result.empty  # Structured NaN DataFrame
 
-    def test_with_data(self, per_base_df):
-        processed = process_per_base_file(per_base_df, False)
+    def test_with_data(self, minimal_per_base_df):
+        processed = process_per_base_file(minimal_per_base_df, False)
         # Mark some as selected, some not
         updated = update_per_base_df(processed, [(2, 4)])
         result = update_mean_values_per_base(updated, 2, 4)

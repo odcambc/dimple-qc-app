@@ -1,72 +1,13 @@
-import numpy as np
 import pandas as pd
-import pytest
 
 from evaluate_data import test_per_base_file as run_test_per_base_file
 from evaluate_data import test_mean_values as run_test_mean_values
-from process_data import (
-    process_per_base_file,
-    update_per_base_df,
-    process_full_mean_values,
-    update_mean_values_per_base,
-)
-
-
-@pytest.fixture
-def per_base_df():
-    """Per-base DataFrame where selected region has clearly different metrics."""
-    np.random.seed(42)
-    n = 100
-
-    # Positions 1-100
-    pos = list(range(1, n + 1))
-    refs = ["A"] * n
-    reads_all = [500] * n
-
-    # Non-variant region: almost all reads match reference
-    a_counts = [480] * n
-    c_counts = [5] * n
-    g_counts = [5] * n
-    t_counts = [10] * n
-
-    # Variant region (positions 30-60): much higher diversity
-    for i in range(29, 60):
-        a_counts[i] = 200
-        c_counts[i] = 100
-        g_counts[i] = 100
-        t_counts[i] = 100
-
-    return pd.DataFrame(
-        {
-            "pos": pos,
-            "ref": refs,
-            "reads_all": reads_all,
-            "matches": [480] * n,
-            "mismatches": [20] * n,
-            "deletions": [1] * n,
-            "insertions": [1] * n,
-            "low_conf": [0] * n,
-            "A": a_counts,
-            "C": c_counts,
-            "G": g_counts,
-            "T": t_counts,
-        }
-    )
-
-
-@pytest.fixture
-def processed_test_data(per_base_df):
-    """Processed data with a selected region that differs from unselected."""
-    processed = process_per_base_file(per_base_df, False)
-    updated = update_per_base_df(processed, [(30, 60)])
-    selected_means = update_mean_values_per_base(updated, 30, 60)
-    full_means = process_full_mean_values(updated)
-    return updated, selected_means, full_means
+from process_data import process_per_base_file
 
 
 class TestTestPerBaseFile:
-    def test_empty_means_returns_empty(self, per_base_df):
-        processed = process_per_base_file(per_base_df, False)
+    def test_empty_means_returns_empty(self, variant_region_per_base_df):
+        processed = process_per_base_file(variant_region_per_base_df, False)
         result = run_test_per_base_file(processed, pd.DataFrame(), pd.DataFrame())
         assert result.empty
 
