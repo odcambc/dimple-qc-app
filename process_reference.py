@@ -1,4 +1,4 @@
-from Bio import pairwise2, SeqIO
+from Bio import Align, SeqIO
 import pandas as pd
 
 
@@ -13,33 +13,34 @@ def align_ref_to_variants(
 
     df_ref_sequence = "".join(per_base_df["ref"])
 
-    alignments = pairwise2.align.globalxx(
-        reference_sequence, df_ref_sequence, one_alignment_only=True
-    )
+    aligner = Align.PairwiseAligner()
+    aligner.mode = "global"
+    aligner.match_score = 1
+    aligner.mismatch_score = 0
+
+    alignments = aligner.align(reference_sequence, df_ref_sequence)
 
     if alignments:
-        best_alignment = alignments[0]  # Best alignment result
-        aligned_seq = list(best_alignment.seqA)  # Extract aligned reference
+        best_alignment = alignments[0]
+        aligned_ref = list(best_alignment[0])    # Reference with gaps inserted
+        aligned_query = list(best_alignment[1])  # Data sequence with gaps inserted
 
-        # Handle insertions/deletions (gap handling)
         adjusted_aligned_seq = []
-        mismatch_count = 0
+        mismatch_flags = []
 
-        for i, (ref_base, df_base) in enumerate(zip(aligned_seq, df_ref_sequence)):
-            if ref_base == "-":  # Reference has an insertion
-                adjusted_aligned_seq.append("-")  # Keep the gap
-            elif ref_base != df_base:
-                adjusted_aligned_seq.append(f"[{ref_base}]")  # Mark mismatch
-                mismatch_count += 1
-            else:
-                adjusted_aligned_seq.append(ref_base)
+        for ref_char, query_char in zip(aligned_ref, aligned_query):
+            if query_char == "-":
+                # Reference has an extra base not present in the data — skip
+                continue
+            # TODO: implement the per-base annotation logic here.
+            # For each data position (query_char != '-'), decide:
+            #   - ref_char == '-': data has an insertion not in the reference
+            #   - ref_char != query_char: substitution mismatch
+            #   - ref_char == query_char: match
+            # Append an entry to adjusted_aligned_seq and mismatch_flags (0 or 1).
 
         per_base_df["aligned_ref"] = adjusted_aligned_seq
-
-        per_base_df["alignment_mismatch"] = [
-            1 if ref_base != df_base else 0
-            for ref_base, df_base in zip(aligned_seq, df_ref_sequence)
-        ]
+        per_base_df["alignment_mismatch"] = mismatch_flags
 
     return per_base_df
 
@@ -78,23 +79,13 @@ def process_reference_genbank(file) -> dict[str, dict | None] | None:
     features_dict = {}
     for feature in features:
         try:
-            print(type(feature.qualifiers))
             if "label" in feature.qualifiers:
-                print("Label(s) found")
-                print(len(feature.qualifiers["label"]))
-                print(feature.qualifiers["label"])
-                print(feature.qualifiers["label"][0])
                 feature_name = feature.qualifiers["label"][0]
             else:
                 feature_name = feature.type
-            print(feature_name)
 
             features_dict[feature_name] = feature
         except AttributeError:
-            print("AttributeError")
-            print(feature)
             continue
-
-    print(features_dict)
 
     return {"sequence": sequence, "features": features_dict}

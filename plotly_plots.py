@@ -1,6 +1,8 @@
-import plotly.graph_objects as go
-import plotly.express as px
+from typing import Optional
+
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 
 # Default empty figure
 empty_fig = go.Figure().update_layout(template="simple_white")
@@ -25,22 +27,22 @@ def base_position_vs_value_plot_plotly(
     if "pos" not in per_base_df.columns:
         return empty_fig
 
-    fig = px.scatter(template="simple_white")
+    fig = go.Figure(layout=dict(template="simple_white"))
     for field in displayed_fields:
         fig.add_trace(
-            go.Scatter(
+            go.Scattergl(
                 x=per_base_df["pos"],
                 y=per_base_df[field],
                 mode="markers",
                 name=field,
             )
         )
-        fig.update_layout(
-            title="Position vs Value",
-            xaxis_title="Position",
-            yaxis_title="Value",
-            xaxis=dict(range=range),
-        )
+    fig.update_layout(
+        title="Position vs Value",
+        xaxis_title="Position",
+        yaxis_title="Value",
+        xaxis=dict(range=range),
+    )
 
     fig.add_vline(
         x=selected_range_low, line_width=1, line_dash="dash", line_color="black"
@@ -49,24 +51,35 @@ def base_position_vs_value_plot_plotly(
         x=selected_range_high, line_width=1, line_dash="dash", line_color="black"
     )
 
-    if show_means:
-        selected_mean = mean_values.at[True, (last_selected_series, "mean")]
-        all_mean = mean_values.at[False, (last_selected_series, "mean")]
+    if show_means and not mean_values.empty:
+        mean_col = f"{last_selected_series}_mean"
+        if mean_col not in mean_values.columns:
+            return fig
 
-        fig.add_hline(
-            y=selected_mean,
-            line_width=1,
-            line_dash="dash",
-            line_color="black",
-            annotation_text=f"Selected mean: {selected_mean:.2f}",
-        )
-        fig.add_hline(
-            y=all_mean,
-            line_width=1,
-            line_dash="solid",
-            line_color="black",
-            annotation_text=f"Full mean: {all_mean:.2f}",
-        )
+        selected_mean = mean_values.at["selected", mean_col]
+        if "unselected" in mean_values.index and not pd.isna(
+            mean_values.at["unselected", mean_col]
+        ):
+            all_mean = mean_values.at["unselected", mean_col]
+        else:
+            all_mean = selected_mean
+
+        if not pd.isna(selected_mean):
+            fig.add_hline(
+                y=float(selected_mean),
+                line_width=1,
+                line_dash="dash",
+                line_color="black",
+                annotation_text=f"Selected mean: {float(selected_mean):.2f}",
+            )
+        if not pd.isna(all_mean):
+            fig.add_hline(
+                y=float(all_mean),
+                line_width=1,
+                line_dash="solid",
+                line_color="black",
+                annotation_text=f"Full mean: {float(all_mean):.2f}",
+            )
 
     return fig
 
@@ -75,7 +88,7 @@ def distribution_violin_plot_plotly(
     per_base_df: pd.DataFrame,
     selected_series: str,
     column_names_dict: dict,
-    column_colors_dict: dict = None,  # type: ignore
+    column_colors_dict: Optional[dict] = None,
 ) -> go.Figure:
     """
     Create a split violin plot showing the distribution of values for selected vs unselected ranges.
