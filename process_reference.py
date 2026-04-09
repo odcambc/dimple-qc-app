@@ -1,4 +1,4 @@
-from Bio import SeqIO, Align
+from Bio import Align, SeqIO
 import pandas as pd
 
 
@@ -13,7 +13,6 @@ def align_ref_to_variants(
 
     df_ref_sequence = "".join(per_base_df["ref"])
 
-    # Use Bio.Align.PairwiseAligner (replaces deprecated pairwise2)
     aligner = Align.PairwiseAligner()
     aligner.mode = "global"
     aligner.match_score = 1
@@ -25,18 +24,18 @@ def align_ref_to_variants(
 
     if alignments:
         best_alignment = alignments[0]
-        ref_aligned = str(best_alignment.seqA)
-        df_aligned = str(best_alignment.seqB)
+        ref_aligned = str(best_alignment[0])
+        df_aligned = str(best_alignment[1])
 
-        # Build aligned_ref and alignment_mismatch by iterating through full alignment
-        # Track position in df separately to handle gaps correctly
+        # Build aligned_ref and alignment_mismatch by iterating the full alignment.
+        # Track df position separately to handle gaps without zip truncation.
         adjusted_aligned_seq = []
         mismatch_flags = []
         df_pos = 0
 
         for ref_base, df_base in zip(ref_aligned, df_aligned):
             if df_base == "-":
-                # Insertion in reference (deletion in data) — skip, don't add to aligned_ref
+                # Insertion in reference (deletion in data) — skip this position
                 continue
             elif ref_base == "-":
                 # Deletion in reference (insertion in data) — mark as gap
@@ -54,16 +53,15 @@ def align_ref_to_variants(
                 mismatch_flags.append(0)
                 df_pos += 1
 
-        # Ensure we have the right number of aligned positions
+        # Only write back if lengths match; otherwise leave placeholder values
         if len(adjusted_aligned_seq) == len(per_base_df):
             per_base_df["aligned_ref"] = adjusted_aligned_seq
             per_base_df["alignment_mismatch"] = mismatch_flags
-        # If lengths don't match, leave the placeholder values in place
 
     return per_base_df
 
 
-def process_reference_fasta(file) -> dict[str, str | list | None] | None:
+def process_reference_fasta(file) -> dict[str, dict | None] | None:
 
     try:
         fasta_record = list(SeqIO.parse(file[0]["datapath"], "fasta"))
@@ -79,7 +77,7 @@ def process_reference_fasta(file) -> dict[str, str | list | None] | None:
     return {"sequence": sequence, "features": None}
 
 
-def process_reference_genbank(file) -> dict[str, str | list | None] | None:
+def process_reference_genbank(file) -> dict[str, dict | None] | None:
     try:
         genbank_record = list(SeqIO.parse(file[0]["datapath"], "genbank"))
     except Exception:
@@ -90,9 +88,20 @@ def process_reference_genbank(file) -> dict[str, str | list | None] | None:
         genbank_record = list(genbank_record)[0]
         sequence = str(genbank_record.seq)
 
-        # TODO: does features always return a list? Check
         features = genbank_record.features
     else:
         return None
 
-    return {"sequence": sequence, "features": features}
+    features_dict = {}
+    for feature in features:
+        try:
+            if "label" in feature.qualifiers:
+                feature_name = feature.qualifiers["label"][0]
+            else:
+                feature_name = feature.type
+
+            features_dict[feature_name] = feature
+        except AttributeError:
+            continue
+
+    return {"sequence": sequence, "features": features_dict}

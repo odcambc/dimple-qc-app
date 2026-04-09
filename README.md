@@ -40,9 +40,46 @@ This will also allow one more metric to be calculated:
 
 The app is designed to parse the results of whole-plasmid sequencing from [Plasmidsaurus](https://plasmidsaurus.com/), and thus uses a non-standard format. The app uses the per-base csv file provided in the "(sample name)_per-base-data" folder.
 
-## Usage
+## Installation
 
-This is meant to be deployed as a Shiny app. It can be installed locally using the requirements.txt file and running the app.py script. A basic Dockerfile is also provided.
+This is meant to be deployed as a Shiny app. It can be installed locally by either adding the dependencies to your environment manager of choice, or by using the provided Dockerfile, then running the app.py script.
+
+### Install with uv (recommended)
+
+```bash
+uv sync
+uv run shiny run
+```
+
+### Install with poetry
+
+```bash
+poetry install
+poetry run shiny run
+```
+
+### Install with pip
+
+```bash
+pip install -r requirements.txt
+python app.py
+```
+
+### Install with Docker
+
+```bash
+docker build -t dimple-qc-app .
+docker run -p 8080:8080 dimple-qc-app
+```
+
+## Example workflow
+We have found the following to work quite well for us
+* After sub-pool cloning, we send the entire subpool to Plasmidsaurous for sequencing, rather than picking colonies in step 13.3 in the [dimple protocol](https://www.protocols.io/view/dimple-library-generation-and-assembly-protocol-rm7vzy7k8lx1/v6?step=8&version_warning=no)
+* This can either be done via whole-plasmid sequencing of the subpool itself, or with premium PCR sequencing following a brief (5-10 cycle) PCR of the relevant portion of the subpool. Premium PCR sequencing will generate substantially more reads, which makes interpretation easier, but requires an additional PCR step.
+* For an individual subpool, we expect the variant fraction to be around 0.12. For a properly constructed subpool, we don't expect to see any shift over the length of the subpool, and we don't expect any individual variants to be much higher than any others. It should look something like this: <img width="894" height="262" alt="image" src="https://github.com/user-attachments/assets/7f6b4da9-0442-44af-895f-ff791d861c25" />
+* One advantage of this approach is that multiple subpools can be combined together and sequenced in the same reaction. You should see a proportional decrease in variant fraction as you add more subpools. e.g. expect an average around 0.06 for two subpools, and 0.04 for three subpools. As more subpools are added, the cost decreases, but it also becomes more challenging to distinguish signal from noise. <img width="925" height="314" alt="image" src="https://github.com/user-attachments/assets/c5f55cde-a518-49fb-91ea-09866510beef" />
+
+
 
 
 ## Caveats

@@ -1,6 +1,5 @@
 import pandas as pd
 
-from scipy.stats import f
 from shiny import reactive
 from shiny.express import input, render, ui
 from shiny.types import FileInfo
@@ -10,6 +9,8 @@ from shinywidgets import render_plotly
 from faicons import icon_svg
 
 from evaluate_data import test_per_base_file
+
+from per_base_io import read_per_base_table
 
 from plotly_plots import (
     base_position_vs_value_plot_plotly,
@@ -38,22 +39,39 @@ from process_reference import (
 from validation import validate_per_base_file
 
 
-# Class to store the app state and keep track of reactive values
-class AppState:
-    def __init__(self):
-        self.sequence_length = reactive.value(100)
-        self.last_selected_series = reactive.value("entropy")
-        self.processed_data = reactive.value(pd.DataFrame())
-        self.selected_mean_values = reactive.value(pd.DataFrame())
-        self.full_mean_values = reactive.value(pd.DataFrame())
-        self.selected_features = reactive.value([])
-        self.reference_data = reactive.value(dict())
-        self.summary_metrics = reactive.value(pd.DataFrame())
 
 
-app_state = AppState()
+@reactive.calc
+def last_selected_series() -> str:
+    """Derive the last-checked series from the checkbox group.
 
-# from input_checkbox_group_tooltips import input_checkbox_group_tooltips
+    Using a calc (not a reactive.value set by an effect) means this resolves
+    in the same flush as input.data_series changes, so downstream renders only
+    fire once per user interaction.
+    """
+    series = input.data_series()
+    return series[-1] if series else "entropy"
+
+
+def format_mean_metric(means: pd.DataFrame, col: str, as_int: bool = False) -> str:
+    """Format a metric from the means DataFrame as 'full (selected in selected)'."""
+    if (
+        means.empty
+        or col not in means.columns
+        or "selected" not in means.index
+        or pd.isna(means.at["selected", col])
+    ):
+        return "0"
+
+    selected = means.at["selected", col]
+    if "unselected" in means.index and not pd.isna(means.at["unselected", col]):
+        unselected = means.at["unselected", col]
+    else:
+        unselected = selected
+
+    if as_int:
+        return f"{int(unselected)} ({int(selected)} in selected)"
+    return f"{unselected:.2f} ({selected:.2f} in selected)"
 
 ui.page_opts(title="DIMPLE quick QC", fillable=True)
 ui.include_css("styles.css")
@@ -78,29 +96,30 @@ def checkbox_with_tooltip(key, names, tooltips):
 with ui.sidebar(title="Settings"):
     "Selected range:"
     with ui.layout_columns():
-
-        @render.ui
-        def min_pos_input():
-            return ui.input_numeric(
-                "min_pos",
-                "Lower",
-                min=0,
-                value=0,
-                update_on="blur",
-            )
-
-        @render.ui
-        def max_pos_input():
-            return ui.input_numeric(
-                "max_pos",
-                "Upper",
-                max=app_state.sequence_length.get(),
-                value=100,
-                update_on="blur",
-            )
+        # Static inputs: wrapping Upper in @render.ui with dynamic max=sequence_length
+        # recreates the widget whenever length changes and resets value=100, which
+        # fights ui.update_numeric and causes a rapid reset loop.
+        ui.input_numeric(
+            "min_pos",
+            "Lower",
+            min=0,
+            value=0,
+            update_on="blur",
+        )
+        ui.input_numeric(
+            "max_pos",
+            "Upper",
+            min=0,
+            max=10**9,
+            value=100,
+            update_on="blur",
+        )
 
     # Checkbox for reverse complementing per-base file
     ui.input_switch("reverse_complement", "Reverse complement")
+
+    # Numeric input for origin shift
+    ui.input_numeric("origin_shift", "Origin shift (bp)", value=0, min=0, step=1)
 
     # Render the checkbox group with tooltips
     ui.input_checkbox_group(
@@ -121,7 +140,7 @@ with ui.sidebar(title="Settings"):
     ui.input_file(
         "reference_file",
         "Upload reference sequence",
-        accept=[".fa:", ".fasta", ".gb", ".genbank", ".gbk"],
+        accept=[".fa", ".fasta", ".gb", ".genbank", ".gbk"],
         multiple=False,
     )
 
@@ -129,24 +148,97 @@ with ui.sidebar(title="Settings"):
     # Only show if a genbank file is uploaded.
     @render.ui
     def feature_select():
-        feature_names = ["None"]
-        features = None
+        if parsed_reference() is None:
+            return None
+        if not parsed_reference()["features"]:
+            return None
 
-        if parsed_reference():
-            if parsed_reference()["features"]:
-                features = parsed_reference()["features"]
-                feature_names = [
-                    feature.qualifiers["label"][0]
-                    for feature in features
-                    if "label" in feature.qualifiers
-                ]
+        features = parsed_reference()["features"]
+        if not isinstance(features, dict):
+            return None
+
+        # Group features by type for the selectize optgroups
+        grouped: dict[str, dict[str, str]] = {}
+        for key, feat in features.items():
+            group = feat.type if hasattr(feat, "type") else "Other"
+            loc_start = int(feat.location.start)
+            loc_end = int(feat.location.end)
+            display = f"{key} ({loc_start}–{loc_end})"
+            grouped.setdefault(group, {})[key] = display
 
         return ui.input_selectize(
             "selected_features",
             "Select feature",
-            choices=feature_names,
+            choices=grouped,
             multiple=True,
         )
+
+    ui.hr()
+    "Download:"
+
+    @render.download(
+        filename="per_base_data.csv", media_type="text/csv", label="Per-base data"
+    )
+    def download_per_base_csv():
+        """Download per-base data as CSV."""
+        df = processed_per_base_file()
+        if df.empty:
+            yield ""
+            return
+        yield df[tabular_cols].to_csv(index=False)
+
+    @render.download(
+        filename="test_results.csv", media_type="text/csv", label="Test results"
+    )
+    def download_test_csv():
+        """Download statistical test results as CSV."""
+        df = test_results()
+        if df.empty:
+            yield ""
+            return
+        yield df.to_csv()
+
+    @render.download(
+        filename="position_plot.png",
+        media_type="image/png",
+        label="Position plot (PNG)",
+    )
+    def download_plot_png():
+        """Download position plot as PNG."""
+        data = processed_per_base_file()
+        fig = base_position_vs_value_plot_plotly(
+            data,
+            mean_values_per_base(),
+            input.data_series(),
+            [0, int(data["pos"].max()) if not data.empty else 0],
+            input.min_pos(),
+            input.max_pos(),
+            last_selected_series(),
+            input.show_means(),
+            feature_regions_for_plot(),
+        )
+        yield fig.to_image(format="png")
+
+    @render.download(
+        filename="position_plot.html",
+        media_type="text/html",
+        label="Position plot (HTML)",
+    )
+    def download_plot_html():
+        """Download position plot as interactive HTML."""
+        data = processed_per_base_file()
+        fig = base_position_vs_value_plot_plotly(
+            data,
+            mean_values_per_base(),
+            input.data_series(),
+            [0, int(data["pos"].max()) if not data.empty else 0],
+            input.min_pos(),
+            input.max_pos(),
+            last_selected_series(),
+            input.show_means(),
+            feature_regions_for_plot(),
+        )
+        yield fig.to_html(include_plotlyjs="cdn").encode()
 
 
 # Main content area
@@ -157,15 +249,28 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
                 @render_plotly
                 def plotly_position_plot():
+                    data = processed_per_base_file()
+                    if data.empty:
+                        return base_position_vs_value_plot_plotly(
+                            data,
+                            pd.DataFrame(),
+                            [],
+                            [0, 0],
+                            0,
+                            0,
+                            last_selected_series(),
+                            input.show_means(),
+                        )
                     pos_plot = base_position_vs_value_plot_plotly(
-                        processed_per_base_file(),
+                        data,
                         mean_values_per_base(),
                         input.data_series(),
-                        [0, app_state.sequence_length.get()],
+                        [0, int(data["pos"].max())],
                         input.min_pos(),
                         input.max_pos(),
-                        app_state.last_selected_series.get(),
+                        last_selected_series(),
                         input.show_means(),
+                        feature_regions_for_plot(),
                     )
 
                     return pos_plot
@@ -199,12 +304,12 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                 input.min_pos,
                 input.max_pos,
                 input.data_series,
-                app_state.last_selected_series,
+                last_selected_series,
             )
             def render_value_violins():
                 distribution_plots = distribution_violin_plot_plotly(
                     processed_per_base_file(),
-                    app_state.last_selected_series.get(),
+                    last_selected_series(),
                     column_names_dict,
                     column_colors_dict,
                 )
@@ -220,85 +325,44 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
             @render.text
             def count():
-
-                means = mean_values_per_base()
-                # If the DataFrame is empty or contains NaNs, return a default value
-                if means.empty or pd.isna(means.at["unselected", "reads_all_mean"]):
-                    return "0"
-
-                selected_mean_reads = means.at["selected", "reads_all_mean"]
-                if "unselected" in means.index and not pd.isna(
-                    means.at["unselected", "reads_all_mean"]
-                ):
-                    unselected_mean_reads = means.at["unselected", "reads_all_mean"]
-                else:
-                    unselected_mean_reads = selected_mean_reads
-
-                return f"{int(unselected_mean_reads)} ({int(selected_mean_reads)} in selected)"
+                return format_mean_metric(
+                    mean_values_per_base(), "reads_all_mean", as_int=True
+                )
 
         with ui.value_box():
 
             @render.text
             def last_selected_series_text():
                 return (
-                    f"Average {column_names_dict[app_state.last_selected_series.get()]}"
+                    f"Average {column_names_dict[last_selected_series()]}"
                 )
 
             @render.text
             def avg_last_selected():
-                selected_series = app_state.last_selected_series.get()
-
-                means = mean_values_per_base()
-                # If the DataFrame is empty or contains NaNs, return a default value
-                if means.empty or pd.isna(
-                    means.at["selected", f"{selected_series}_mean"]
-                ):
-                    return "0"
-
-                selected_mean_reads = means.at["selected", f"{selected_series}_mean"]
-                if "unselected" in means.index and not pd.isna(
-                    means.at["unselected", f"{selected_series}_mean"]
-                ):
-                    unselected_mean_reads = means.at[
-                        "unselected", f"{selected_series}_mean"
-                    ]
-
-                else:
-                    unselected_mean_reads = selected_mean_reads
-
-                return f"{unselected_mean_reads:.2f} ({selected_mean_reads:.2f} in selected)"
+                col = f"{last_selected_series()}_mean"
+                if col not in mean_values_per_base().columns:
+                    return "N/A"
+                return format_mean_metric(mean_values_per_base(), col)
 
         with ui.value_box():
             "Average effective entropy"
 
             @render.text
             def avg_effective_entropy():
-                means = mean_values_per_base()
-                # If the DataFrame is empty or contains NaNs, return a default value
-                if means.empty or pd.isna(
-                    means.at["selected", "effective_entropy_mean"]
-                ):
-                    return "0"
-
-                selected_mean_reads = means.at["selected", "effective_entropy_mean"]
-                if "unselected" in means.index and not pd.isna(
-                    means.at["unselected", "effective_entropy_mean"]
-                ):
-                    unselected_mean_reads = means.at[
-                        "unselected", "effective_entropy_mean"
-                    ]
-                else:
-                    unselected_mean_reads = selected_mean_reads
-
-                return f"{unselected_mean_reads:.2f} ({selected_mean_reads:.2f} in selected)"
+                return format_mean_metric(
+                    mean_values_per_base(), "effective_entropy_mean"
+                )
 
 
 # Reactive calcs
-# Parse the input reference FASTA. Only handle single-sequence FASTA files.
+# Parse the input reference file. Handles fasta or genbank by parsing extension.
 @reactive.calc
-def parsed_reference() -> dict[str, str | list | None] | None:
+def parsed_reference() -> dict[str, dict | None] | None:
     """Parse reference file (FASTA or GenBank) and return dict with sequence string and
-    feature objects (if present)."""
+    feature objects (if present). If no feature objects are present, the "feature" value
+    is None. Returns None if no file is uploaded or if the file is not a valid fasta or
+    genbank file."""
+
     file = input.reference_file()
     if file is None:
         return None
@@ -307,12 +371,11 @@ def parsed_reference() -> dict[str, str | list | None] | None:
     if file[0]["name"].endswith((".fa", ".fasta")):
         result = process_reference_fasta(file)
     # If it's genbank, parse as such
-    if file[0]["name"].endswith((".gb", ".genbank", ".gbk")):
+    elif file[0]["name"].endswith((".gb", ".genbank", ".gbk")):
         result = process_reference_genbank(file)
     else:
         return None
 
-    app_state.reference_data.set(result)
     return result
 
 
@@ -323,125 +386,182 @@ def parsed_per_base_file():
     if file is None:
         return pd.DataFrame()
 
-    df = pd.read_csv(file[0]["datapath"], sep="\t")
+    try:
+        df = read_per_base_table(file[0]["datapath"])
+    except Exception:
+        ui.notification_show("Could not parse the uploaded file. Check the format.")
+        return pd.DataFrame()
+
+    if df.empty:
+        ui.notification_show("Could not parse the uploaded file. Check the format.")
+        return pd.DataFrame()
 
     if not validate_per_base_file(df):
         return pd.DataFrame()
-
-    # Plot entropy by default
-    ui.update_checkbox_group("data_series", selected=["entropy"])
 
     return df
 
 
 @reactive.calc
-def processed_per_base_file():
+def sequence_length():
+    """Derive sequence length from parsed file, independent of range inputs."""
+    parsed = parsed_per_base_file()
+    if parsed.empty:
+        return 100
+    return int(parsed["pos"].max())
 
-    if parsed_per_base_file().empty:
+
+@reactive.effect
+@reactive.event(input.per_base_file)
+def initialize_series_selection():
+    """Initialize displayed metric selection once per upload."""
+    if input.per_base_file() is None:
+        return
+    ui.update_checkbox_group("data_series", selected=["entropy"])
+
+
+@reactive.calc
+def base_processed_data():
+    """Run expensive per-base processing. Independent of range inputs."""
+    parsed = parsed_per_base_file()
+    if parsed.empty:
+        return pd.DataFrame()
+    data = process_per_base_file(parsed, input.reverse_complement(), input.origin_shift())
+    ref = parsed_reference()
+    if ref and ref.get("sequence"):
+        data = align_ref_to_variants(data, ref["sequence"])
+    return data
+
+
+@reactive.calc
+def processed_per_base_file():
+    """Apply range and feature selection to base processed data (cheap)."""
+    data = base_processed_data()
+    if data.empty:
         return pd.DataFrame()
 
-    data = process_per_base_file(parsed_per_base_file(), input.reverse_complement())
+    data = update_per_base_df(data, [(input.min_pos(), input.max_pos())])
 
-    # Update the shared state
-    app_state.sequence_length.set(max(data["pos"]))
-    app_state.processed_data.set(data)
-    app_state.selected_features.set(input.selected_features())
-
-    app_state.full_mean_values.set(process_full_mean_values(data))
+    ref = parsed_reference()
+    if ref and ref["features"] and input.selected_features():
+        selected_range = []
+        for feature in input.selected_features():
+            if feature in ref["features"]:
+                selected_range.append(
+                    (
+                        int(ref["features"][feature].location.start),
+                        int(ref["features"][feature].location.end),
+                    )
+                )
+        if selected_range:
+            data = update_per_base_df(data, selected_range)
 
     return data
+
+
+@reactive.calc
+def feature_regions_for_plot() -> list[dict]:
+    """Build a list of feature region dicts for plot highlighting.
+
+    Selected features get a vivid color; unselected features get a muted gray.
+    """
+    ref = parsed_reference()
+    if not ref or not ref["features"]:
+        return []
+
+    try:
+        selected = set(input.selected_features() or [])
+    except Exception:
+        selected = set()
+
+    selected_colors = {
+        "CDS": "rgba(100, 149, 237, 0.35)",
+        "gene": "rgba(100, 149, 237, 0.25)",
+        "misc_feature": "rgba(255, 165, 0, 0.35)",
+        "promoter": "rgba(0, 180, 0, 0.35)",
+    }
+    selected_default = "rgba(120, 120, 255, 0.30)"
+    unselected_color = "rgba(180, 180, 180, 0.12)"
+
+    regions = []
+    for key, feat in ref["features"].items():
+        feat_type = feat.type if hasattr(feat, "type") else "Other"
+        if key in selected:
+            color = selected_colors.get(feat_type, selected_default)
+        else:
+            color = unselected_color
+        regions.append({
+            "start": int(feat.location.start),
+            "end": int(feat.location.end),
+            "label": key,
+            "color": color,
+        })
+    return regions
 
 
 # TODO: this df should also include the means for the full series, not just selected vs. non-selected
 @reactive.calc
 def mean_values_per_base():
-    if processed_per_base_file().empty:
+    data = processed_per_base_file()
+    if data.empty:
         return pd.DataFrame()
-    app_state.selected_mean_values.set(
-        update_mean_values_per_base(
-            app_state.processed_data.get(), input.min_pos(), input.max_pos()
-        )
-    )
-
-    app_state.summary_metrics.set(
-        test_per_base_file(
-            app_state.processed_data.get(),
-            app_state.selected_mean_values.get(),
-            app_state.full_mean_values.get(),
-        )
-    )
-
-    return app_state.selected_mean_values()
+    return update_mean_values_per_base(data)
 
 
 @reactive.calc
 def test_results():
-    if app_state.processed_data.get().empty:
+    data = processed_per_base_file()
+    if data.empty:
         return pd.DataFrame()
-
-    return app_state.summary_metrics.get()
+    selected_means = mean_values_per_base()
+    full_means = process_full_mean_values(data)
+    return test_per_base_file(data, selected_means, full_means)
 
 
 # Reactive effects
 
 
 @reactive.effect
-@reactive.event(input.min_pos, input.max_pos)
-def update_data_selected_range():
-    """Update data selection when range changes."""
-
-    if app_state.processed_data.get().empty:
-        return
-
-    update_per_base_df(
-        app_state.processed_data.get(),
-        input.min_pos(),
-        input.max_pos(),
-        app_state.reference_data.get(),
-    )
-
-
-# Update alignment when a reference sequence is uploaded
-@reactive.effect
-@reactive.event(input.reference_file)
-def update_alignment():
-    """Align reference sequence to per-base data when reference file is uploaded."""
-    processed_data = app_state.processed_data.get()
-    reference_data = app_state.reference_data.get()
-
-    if processed_data.empty or not reference_data or not reference_data.get("sequence"):
-        return
-
-    aligned_data = align_ref_to_variants(processed_data, reference_data["sequence"])
-    app_state.processed_data.set(aligned_data)
-
-
-@reactive.effect
-@reactive.event(app_state.sequence_length)
+@reactive.event(sequence_length)
 def update_max_pos():
     """Update max position UI when sequence length changes."""
-    if not app_state.processed_data.get().empty:
-        ui.update_numeric("max_pos", value=app_state.sequence_length.get())
+    if input.per_base_file() is not None:
+        seq_len = sequence_length()
+        ui.update_numeric("max_pos", value=seq_len, max=seq_len)
 
 
-@reactive.effect
-@reactive.event(input.data_series)
-def update_last_selected_series():
-    """Update last selected series when checkbox selection changes."""
-    if input.data_series():
-        app_state.last_selected_series.set(input.data_series()[-1])
 
-
-# Validate range inputs
 @reactive.effect
 @reactive.event(input.min_pos, input.max_pos)
 def validate_range():
-    # Minimum should be strictly less than maximum
-    if input.min_pos() >= input.max_pos():
-        ui.update_numeric("min_pos", value=input.max_pos() - 1)
-    # Minimum should be greater than or equal to 0
-    if input.min_pos() < 0:
-        ui.update_numeric("min_pos", value=0)
-    # Maximum should be less than the sequence length
-    if input.max_pos() > app_state.sequence_length.get():
-        ui.update_numeric("max_pos", value=app_state.sequence_length.get())
+    min_val = input.min_pos()
+    max_val = input.max_pos()
+    seq_len = sequence_length()
+
+    new_min = min_val
+    new_max = max_val
+
+    if min_val < 0:
+        new_min = 0
+    if max_val > seq_len:
+        new_max = seq_len
+    if new_min >= new_max:
+        new_min = max(new_max - 1, 0)
+
+    if new_min != min_val:
+        ui.update_numeric("min_pos", value=new_min)
+    if new_max != max_val:
+        ui.update_numeric("max_pos", value=new_max, max=seq_len)
+
+
+@reactive.effect
+@reactive.event(input.origin_shift)
+def validate_origin_shift():
+    """Clamp origin shift to valid range [0, sequence_length - 1]."""
+    seq_len = sequence_length()
+    if seq_len <= 0:
+        return
+    if input.origin_shift() < 0:
+        ui.update_numeric("origin_shift", value=0)
+    elif input.origin_shift() >= seq_len:
+        ui.update_numeric("origin_shift", value=seq_len - 1)
