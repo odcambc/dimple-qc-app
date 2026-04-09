@@ -177,47 +177,12 @@ def process_per_base_file(
 
 def update_per_base_df(
     per_base_df: pd.DataFrame,
-<<<<<<< HEAD
-    selected_range_low: int,
-    selected_range_high: int,
-    parsed_reference: dict[str, str | list | None] | None,
-    origin_shift: int = 0,
-) -> None:
-=======
     selected_range_list: list[tuple[int, int]],
 ) -> pd.DataFrame:
->>>>>>> main
 
     if per_base_df.empty:
         return per_base_df
 
-<<<<<<< HEAD
-    sequence_length = per_base_df["pos"].max()
-
-    selected_positions = list(range(selected_range_low, selected_range_high))
-
-    if parsed_reference:
-        for feature in parsed_reference["features"]:
-            if feature:
-                if feature.type != "source":
-                    start = int(feature.location.start)
-                    end = int(feature.location.end)
-
-                    # Apply origin shift to feature coordinates
-                    if origin_shift > 0:
-                        shifted_start = (start - origin_shift) % sequence_length
-                        shifted_end = (end - origin_shift) % sequence_length
-
-                        # Handle features that straddle the new origin
-                        if shifted_start < shifted_end:
-                            selected_positions += list(range(shifted_start, shifted_end))
-                        else:
-                            # Feature wraps around the origin
-                            selected_positions += list(range(shifted_start, sequence_length))
-                            selected_positions += list(range(0, shifted_end))
-                    else:
-                        selected_positions += list(range(start, end))
-=======
     df = per_base_df.copy()
 
     # Build a vectorized boolean mask from the list of (start, end) ranges
@@ -226,7 +191,6 @@ def update_per_base_df(
     for start, end in selected_range_list:
         mask |= (df["pos"] >= start) & (df["pos"] < end)
         total_selected += end - start
->>>>>>> main
 
     subpool_codon_fraction = 3 / (total_selected + 1)
 

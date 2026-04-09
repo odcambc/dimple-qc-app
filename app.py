@@ -425,7 +425,7 @@ def base_processed_data():
     parsed = parsed_per_base_file()
     if parsed.empty:
         return pd.DataFrame()
-    return process_per_base_file(parsed, input.reverse_complement())
+    return process_per_base_file(parsed, input.reverse_complement(), input.origin_shift())
 
 
 @reactive.calc
@@ -435,15 +435,7 @@ def processed_per_base_file():
     if data.empty:
         return pd.DataFrame()
 
-<<<<<<< HEAD
-    data = process_per_base_file(
-        parsed_per_base_file(),
-        input.reverse_complement(),
-        input.origin_shift(),
-    )
-=======
     data = update_per_base_df(data, [(input.min_pos(), input.max_pos())])
->>>>>>> main
 
     ref = parsed_reference()
     if ref and ref["features"] and input.selected_features():
@@ -525,35 +517,7 @@ def test_results():
 
 
 @reactive.effect
-<<<<<<< HEAD
-@reactive.event(input.min_pos, input.max_pos, input.origin_shift)
-def update_data_selected_range():
-    """Update data selection when range or origin changes."""
-
-    if app_state.processed_data.get().empty:
-        return
-
-    update_per_base_df(
-        app_state.processed_data.get(),
-        input.min_pos(),
-        input.max_pos(),
-        app_state.reference_data.get(),
-        input.origin_shift(),
-    )
-
-
-# Update alignment when a reference sequence is uploaded
-@reactive.effect
-@reactive.event(input.reference_file)
-def update_alignment():
-    return
-
-
-@reactive.effect
-@reactive.event(app_state.sequence_length)
-=======
 @reactive.event(sequence_length)
->>>>>>> main
 def update_max_pos():
     """Update max position UI when sequence length changes."""
     if input.per_base_file() is not None:
@@ -565,31 +529,6 @@ def update_max_pos():
 @reactive.effect
 @reactive.event(input.min_pos, input.max_pos)
 def validate_range():
-<<<<<<< HEAD
-    # Minimum should be strictly less than maximum
-    if input.min_pos() >= input.max_pos():
-        ui.update_numeric("min_pos", value=input.max_pos() - 1)
-    # Minimum should be greater than or equal to 0
-    if input.min_pos() < 0:
-        ui.update_numeric("min_pos", value=0)
-    # Maximum should be less than the sequence length
-    if input.max_pos() > app_state.sequence_length.get():
-        ui.update_numeric("max_pos", value=app_state.sequence_length.get())
-
-
-@reactive.effect
-@reactive.event(input.origin_shift)
-def validate_origin_shift():
-    """Clamp origin shift to valid range [0, sequence_length - 1]."""
-    seq_len = app_state.sequence_length.get()
-    if seq_len <= 0:
-        return
-
-    if input.origin_shift() < 0:
-        ui.update_numeric("origin_shift", value=0)
-    elif input.origin_shift() >= seq_len:
-        ui.update_numeric("origin_shift", value=seq_len - 1)
-=======
     min_val = input.min_pos()
     max_val = input.max_pos()
     seq_len = sequence_length()
@@ -608,4 +547,16 @@ def validate_origin_shift():
         ui.update_numeric("min_pos", value=new_min)
     if new_max != max_val:
         ui.update_numeric("max_pos", value=new_max, max=seq_len)
->>>>>>> main
+
+
+@reactive.effect
+@reactive.event(input.origin_shift)
+def validate_origin_shift():
+    """Clamp origin shift to valid range [0, sequence_length - 1]."""
+    seq_len = sequence_length()
+    if seq_len <= 0:
+        return
+    if input.origin_shift() < 0:
+        ui.update_numeric("origin_shift", value=0)
+    elif input.origin_shift() >= seq_len:
+        ui.update_numeric("origin_shift", value=seq_len - 1)
