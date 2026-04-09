@@ -101,6 +101,9 @@ with ui.sidebar(title="Settings"):
     # Checkbox for reverse complementing per-base file
     ui.input_switch("reverse_complement", "Reverse complement")
 
+    # Numeric input for origin shift
+    ui.input_numeric("origin_shift", "Origin shift (bp)", value=0, min=0, step=1)
+
     # Render the checkbox group with tooltips
     ui.input_checkbox_group(
         "data_series",
@@ -339,7 +342,11 @@ def processed_per_base_file():
     if parsed_per_base_file().empty:
         return pd.DataFrame()
 
-    data = process_per_base_file(parsed_per_base_file(), input.reverse_complement())
+    data = process_per_base_file(
+        parsed_per_base_file(),
+        input.reverse_complement(),
+        input.origin_shift(),
+    )
 
     # Update the shared state
     app_state.sequence_length.set(max(data["pos"]))
@@ -385,9 +392,9 @@ def test_results():
 
 
 @reactive.effect
-@reactive.event(input.min_pos, input.max_pos)
+@reactive.event(input.min_pos, input.max_pos, input.origin_shift)
 def update_data_selected_range():
-    """Update data selection when range changes."""
+    """Update data selection when range or origin changes."""
 
     if app_state.processed_data.get().empty:
         return
@@ -397,6 +404,7 @@ def update_data_selected_range():
         input.min_pos(),
         input.max_pos(),
         app_state.reference_data.get(),
+        input.origin_shift(),
     )
 
 
@@ -436,3 +444,17 @@ def validate_range():
     # Maximum should be less than the sequence length
     if input.max_pos() > app_state.sequence_length.get():
         ui.update_numeric("max_pos", value=app_state.sequence_length.get())
+
+
+@reactive.effect
+@reactive.event(input.origin_shift)
+def validate_origin_shift():
+    """Clamp origin shift to valid range [0, sequence_length - 1]."""
+    seq_len = app_state.sequence_length.get()
+    if seq_len <= 0:
+        return
+
+    if input.origin_shift() < 0:
+        ui.update_numeric("origin_shift", value=0)
+    elif input.origin_shift() >= seq_len:
+        ui.update_numeric("origin_shift", value=seq_len - 1)

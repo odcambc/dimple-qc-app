@@ -81,6 +81,7 @@ def max_non_ref_base(x):
 def process_per_base_file(
     per_base_df: pd.DataFrame,
     reverse_complement: bool,
+    origin_shift: int = 0,
 ) -> pd.DataFrame:
     if per_base_df.empty:
         return pd.DataFrame()
@@ -147,6 +148,11 @@ def process_per_base_file(
     per_base_df["aligned_ref"] = ["-"] * len(per_base_df)
     per_base_df["alignment_mismatch"] = [0] * len(per_base_df)
 
+    # Apply origin shift (before reverse complement so they compose correctly)
+    if origin_shift > 0:
+        per_base_df["pos"] = ((per_base_df["pos"] - origin_shift - 1) % sequence_length) + 1
+        per_base_df = per_base_df.sort_values("pos").reset_index(drop=True)
+
     if reverse_complement:
         # Reverse the index
         per_base_df = per_base_df.iloc[::-1]
@@ -170,10 +176,13 @@ def update_per_base_df(
     selected_range_low: int,
     selected_range_high: int,
     parsed_reference: dict[str, str | list | None] | None,
+    origin_shift: int = 0,
 ) -> None:
 
     if per_base_df.empty:
         return
+
+    sequence_length = per_base_df["pos"].max()
 
     selected_positions = list(range(selected_range_low, selected_range_high))
 
@@ -183,7 +192,21 @@ def update_per_base_df(
                 if feature.type != "source":
                     start = int(feature.location.start)
                     end = int(feature.location.end)
-                    selected_positions += list(range(start, end))
+
+                    # Apply origin shift to feature coordinates
+                    if origin_shift > 0:
+                        shifted_start = (start - origin_shift) % sequence_length
+                        shifted_end = (end - origin_shift) % sequence_length
+
+                        # Handle features that straddle the new origin
+                        if shifted_start < shifted_end:
+                            selected_positions += list(range(shifted_start, shifted_end))
+                        else:
+                            # Feature wraps around the origin
+                            selected_positions += list(range(shifted_start, sequence_length))
+                            selected_positions += list(range(0, shifted_end))
+                    else:
+                        selected_positions += list(range(start, end))
 
     selected_codon_range = range(selected_range_low // 3, selected_range_high // 3)
     subpool_codon_fraction = 3 / (len(selected_positions) + 1)
