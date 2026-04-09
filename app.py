@@ -169,6 +169,69 @@ with ui.sidebar(title="Settings"):
             multiple=True,
         )
 
+    ui.hr()
+    "Download:"
+
+    @render.download(
+        filename="per_base_data.csv", media_type="text/csv", label="Per-base data"
+    )
+    def download_per_base_csv():
+        """Download per-base data as CSV."""
+        df = processed_per_base_file()
+        if df.empty:
+            yield ""
+            return
+        yield df[tabular_cols].to_csv(index=False)
+
+    @render.download(
+        filename="test_results.csv", media_type="text/csv", label="Test results"
+    )
+    def download_test_csv():
+        """Download statistical test results as CSV."""
+        df = test_results()
+        if df.empty:
+            yield ""
+            return
+        yield df.to_csv()
+
+    @render.download(
+        filename="position_plot.png",
+        media_type="image/png",
+        label="Position plot (PNG)",
+    )
+    def download_plot_png():
+        """Download position plot as PNG."""
+        fig = base_position_vs_value_plot_plotly(
+            processed_per_base_file(),
+            mean_values_per_base(),
+            input.data_series(),
+            [0, app_state.sequence_length.get()],
+            input.min_pos(),
+            input.max_pos(),
+            app_state.last_selected_series.get(),
+            input.show_means(),
+        )
+        yield fig.to_image(format="png")
+
+    @render.download(
+        filename="position_plot.html",
+        media_type="text/html",
+        label="Position plot (HTML)",
+    )
+    def download_plot_html():
+        """Download position plot as interactive HTML."""
+        fig = base_position_vs_value_plot_plotly(
+            processed_per_base_file(),
+            mean_values_per_base(),
+            input.data_series(),
+            [0, app_state.sequence_length.get()],
+            input.min_pos(),
+            input.max_pos(),
+            app_state.last_selected_series.get(),
+            input.show_means(),
+        )
+        yield fig.to_html(include_plotlyjs="cdn").encode()
+
 
 # Main content area
 with ui.layout_columns(columns=2, col_widths=[9, 3]):
