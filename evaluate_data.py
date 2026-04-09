@@ -1,7 +1,9 @@
 # validation.py
 
+import numpy as np
 import pandas as pd
 import scipy.stats as stats
+from statsmodels.stats.multitest import multipletests
 
 from shared import test_cols
 
@@ -17,71 +19,59 @@ def test_per_base_file(
     if selected_means_df.empty or full_mean_df.empty:
         return pd.DataFrame()
 
-    # Create a dataframe to store the results
-    test_results = pd.DataFrame(
-        columns=pd.Index(["Metric", "Test", "Result", "p_value", "t_stat"])
-    )
-    test_results.set_index("Metric", inplace=True)
-
-    # Test the mean values
-    test_results = test_mean_values(
-        processed_data, selected_means_df, full_mean_df, test_results
-    )
-
-    # Test the standard deviation values
-    # test_results = test_std_values(selected_means_df, full_mean_df, test_results)
-
-    # Test the p-values
-    # test_results = test_p_values(selected_means_df, full_mean_df, test_results)
-
-    return test_results
+    return test_mean_values(processed_data, selected_means_df, full_mean_df)
 
 
 def test_mean_values(
     processed_data: pd.DataFrame,
     selected_means_df: pd.DataFrame,
     full_mean_df: pd.DataFrame,
-    test_results: pd.DataFrame,
 ) -> pd.DataFrame:
     """Function to test the mean values and return a dataframe with summary pass/fail results"""
 
-    # Create a dataframe to store the results
-    test_results = pd.DataFrame(
-        columns=pd.Index(["Metric", "Test", "Result", "p_value", "t_stat"])
-    )
-    test_results.set_index("Metric", inplace=True)
-
-    # Test the mean values
+    # Run t-tests for all columns and collect results
+    p_values = []
+    t_stats = []
     for column in test_cols:
-        # Get the mean values
         selected_values = processed_data[processed_data["is_selected"]][column]
         unselected_values = processed_data[~processed_data["is_selected"]][column]
 
-        # Perform a t-test
+        if len(selected_values) < 2 or len(unselected_values) < 2:
+            t_stats.append(np.nan)
+            p_values.append(np.nan)
+            continue
+
         t_test_result = stats.ttest_ind(
             selected_values,
             unselected_values,
             equal_var=False,
         )
-        t_stat, p_value = t_test_result.statistic, t_test_result.pvalue  # type: ignore
+        t_stats.append(t_test_result.statistic)
+        p_values.append(t_test_result.pvalue)
 
-        # Perform the test
-        if p_value < 0.05:
-            test_results.loc[column, "Metric"] = column
-            test_results.loc[column, "Test"] = "Compare means"
-            test_results.loc[column, "Result"] = "Pass"
-            test_results.loc[column, "p_value"] = p_value
-            test_results.loc[column, "t_stat"] = t_stat
-        else:
-            test_results.loc[column, "Metric"] = column
-            test_results.loc[column, "Test"] = "Compare means"
-            test_results.loc[column, "Result"] = "Fail"
-            test_results.loc[column, "p_value"] = p_value
-            test_results.loc[column, "t_stat"] = t_stat
+    # Apply Benjamini-Hochberg FDR correction (filter NaN p-values first)
+    p_arr = np.array(p_values)
+    valid_mask = ~np.isnan(p_arr)
+    corrected_p = np.full_like(p_arr, np.nan)
+    rejected = np.full(len(p_arr), False)
 
-    print(test_results.columns)
+    if valid_mask.any():
+        rej, cor, _, _ = multipletests(p_arr[valid_mask], method="fdr_bh")
+        corrected_p[valid_mask] = cor
+        rejected[valid_mask] = rej
 
-    return test_results
+    rows = []
+    for i, column in enumerate(test_cols):
+        rows.append({
+            "Metric": column,
+            "Test": "Compare means",
+            "Result": "Skip" if np.isnan(p_values[i]) else ("Pass" if rejected[i] else "Fail"),
+            "p_value": p_values[i],
+            "p_adjusted": corrected_p[i],
+            "t_stat": t_stats[i],
+        })
+
+    return pd.DataFrame(rows).set_index("Metric")
 
 
 def test_std_values(
