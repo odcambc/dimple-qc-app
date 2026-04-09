@@ -201,15 +201,17 @@ with ui.sidebar(title="Settings"):
     )
     def download_plot_png():
         """Download position plot as PNG."""
+        data = processed_per_base_file()
         fig = base_position_vs_value_plot_plotly(
-            processed_per_base_file(),
+            data,
             mean_values_per_base(),
             input.data_series(),
-            [0, app_state.sequence_length.get()],
+            [0, int(data["pos"].max()) if not data.empty else 0],
             input.min_pos(),
             input.max_pos(),
-            app_state.last_selected_series.get(),
+            last_selected_series(),
             input.show_means(),
+            feature_regions_for_plot(),
         )
         yield fig.to_image(format="png")
 
@@ -220,15 +222,17 @@ with ui.sidebar(title="Settings"):
     )
     def download_plot_html():
         """Download position plot as interactive HTML."""
+        data = processed_per_base_file()
         fig = base_position_vs_value_plot_plotly(
-            processed_per_base_file(),
+            data,
             mean_values_per_base(),
             input.data_series(),
-            [0, app_state.sequence_length.get()],
+            [0, int(data["pos"].max()) if not data.empty else 0],
             input.min_pos(),
             input.max_pos(),
-            app_state.last_selected_series.get(),
+            last_selected_series(),
             input.show_means(),
+            feature_regions_for_plot(),
         )
         yield fig.to_html(include_plotlyjs="cdn").encode()
 
