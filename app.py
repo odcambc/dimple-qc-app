@@ -30,6 +30,7 @@ from shared import (
 )
 
 from process_reference import (
+    align_ref_to_variants,
     process_reference_fasta,
     process_reference_genbank,
 )
@@ -404,7 +405,15 @@ def update_data_selected_range():
 @reactive.effect
 @reactive.event(input.reference_file)
 def update_alignment():
-    return
+    """Align reference sequence to per-base data when reference file is uploaded."""
+    processed_data = app_state.processed_data.get()
+    reference_data = app_state.reference_data.get()
+
+    if processed_data.empty or not reference_data or not reference_data.get("sequence"):
+        return
+
+    aligned_data = align_ref_to_variants(processed_data, reference_data["sequence"])
+    app_state.processed_data.set(aligned_data)
 
 
 @reactive.effect
