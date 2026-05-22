@@ -9,8 +9,14 @@
 	},
 	"remoteUser": "vscode",
 	"postCreateCommand": "pip3 install --user -r requirements.txt",
+	"mounts": [
+		"source=dimple-qc-app-venv,target=${containerWorkspaceFolder}/.venv,type=volume"
+	],
 	"customizations": {
 		"vscode": {
+			"settings": {
+				"python.defaultInterpreterPath": "/usr/local/bin/python"
+			},
 			"extensions": [
 				"ms-python.python",
 				"ms-python.vscode-pylance",
