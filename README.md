@@ -51,19 +51,14 @@ uv sync
 uv run shiny run
 ```
 
-### Install with poetry
-
-```bash
-poetry install
-poetry run shiny run
-```
-
 ### Install with pip
 
 ```bash
 pip install -r requirements.txt
-python app.py
+shiny run app.py
 ```
+
+> `requirements.txt` is generated from `pyproject.toml` via `uv export`. If you add or change dependencies, edit `pyproject.toml` and regenerate with `uv export --format requirements.txt > requirements.txt`.
 
 ### Install with Docker
 

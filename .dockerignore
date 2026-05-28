@@ -1,6 +1,11 @@
 .git
 .gitignore
 .cursor
+.claude
+.devcontainer
+.github
+deploy
+uv.lock
 __pycache__
 *.py[cod]
 .pytest_cache

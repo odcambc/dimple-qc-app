@@ -1,0 +1,36 @@
+dimple-qc.odcambc.com {
+	# 25 MB body cap — accommodates 20 MB user uploads plus multipart overhead.
+	# Caddy returns 413 before the request reaches the Shiny container.
+	request_body {
+		max_size 25MB
+	}
+
+	# 60 req/min per source IP. Requires caddy-ratelimit plugin.
+	# Build Caddy via https://caddyserver.com/api/download with
+	# p=github.com/mholt/caddy-ratelimit
+	rate_limit {
+		zone per_ip {
+			key    {client_ip}
+			events 60
+			window 1m
+		}
+	}
+
+	header {
+		# Force HTTPS for 1y on this domain and subdomains
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		# Block iframe embedding (mitigates clickjacking)
+		X-Frame-Options "DENY"
+		# Prevent MIME-sniffing
+		X-Content-Type-Options "nosniff"
+		# Dynamic Shiny responses contain per-user state — never cache them
+		Cache-Control "private, no-store"
+		# Hide Caddy version
+		-Server
+	}
+
+	encode gzip zstd
+
+	# Shiny WebSocket connections pass through transparently — no special config needed
+	reverse_proxy 127.0.0.1:8080
+}
