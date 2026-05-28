@@ -4,8 +4,9 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-# Default empty figure
-empty_fig = go.Figure().update_layout(template="simple_white")
+def _empty_fig() -> go.Figure:
+    # Return a fresh figure each call so per-session mutations cannot leak across users.
+    return go.Figure().update_layout(template="simple_white")
 
 
 def base_position_vs_value_plot_plotly(
@@ -20,13 +21,13 @@ def base_position_vs_value_plot_plotly(
     feature_regions: list[dict] | None = None,
 ) -> go.Figure:
     if per_base_df.empty:
-        return empty_fig
+        return _empty_fig()
     if not displayed_fields:
-        return empty_fig
+        return _empty_fig()
     if not range:
         range = [0, per_base_df["pos"].max()]
     if "pos" not in per_base_df.columns:
-        return empty_fig
+        return _empty_fig()
 
     fig = go.Figure(layout=dict(template="simple_white"))
     for field in displayed_fields:
@@ -43,6 +44,7 @@ def base_position_vs_value_plot_plotly(
         xaxis_title="Position",
         yaxis_title="Value",
         xaxis=dict(range=range),
+        uirevision="position-plot",
     )
 
     fig.add_vline(
@@ -121,11 +123,11 @@ def distribution_violin_plot_plotly(
     """
     # Handle empty or invalid data
     if per_base_df.empty:
-        return empty_fig
+        return _empty_fig()
     if selected_series not in per_base_df.columns:
-        return empty_fig
+        return _empty_fig()
     if selected_series not in column_names_dict:
-        return empty_fig
+        return _empty_fig()
 
     # Create a copy of the dataframe to avoid modifying the original
 
@@ -214,6 +216,7 @@ def distribution_violin_plot_plotly(
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         margin=dict(l=50, r=50, t=80, b=50),
         template="simple_white",
+        uirevision="violin-plot",
         violingap=0.5,
         violingroupgap=0.5,
         violinmode="overlay",
@@ -234,11 +237,11 @@ def distribution_histogram_plot_plotly(
     column_names_dict: dict,
 ) -> go.Figure:
     if per_base_df.empty:
-        return go.Figure()
+        return _empty_fig()
     if selected_series not in per_base_df.columns:
-        return go.Figure()
+        return _empty_fig()
     if selected_series not in column_names_dict:
-        return go.Figure()
+        return _empty_fig()
 
     fig = px.histogram(
         per_base_df,
