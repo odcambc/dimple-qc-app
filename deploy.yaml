@@ -1,0 +1,12 @@
+# Deploy manifest — services this repo exposes to the suite front door.
+# Consumed by dms-tools. Spec: dms-tools/docs/deploy-contract.md
+services:
+  - name: dimple-qc
+    build:
+      dockerfile: Dockerfile        # builds from this repo's context
+    default_port: 8080              # process binds $PORT, defaults here
+    health:
+      type: http
+      path: /healthz               # served by asgi.py; 200 once Shiny is up
+    resources:
+      memory: 1g                    # advisory: pandas/scipy/biopython/plotly stack

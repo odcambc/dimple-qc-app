@@ -15,4 +15,6 @@ COPY . .
 EXPOSE 8080
 
 # Listen on all interfaces; honor PORT from the host (e.g. Cloud Run, Knative).
-ENTRYPOINT ["sh", "-c", "exec shiny run app.py --host 0.0.0.0 --port ${PORT:-8080}"]
+# asgi:app is the Shiny app plus a /healthz readiness route (see asgi.py); it
+# replaces `shiny run app.py` so the suite deploy contract's probe is served.
+ENTRYPOINT ["sh", "-c", "exec uvicorn asgi:app --host 0.0.0.0 --port ${PORT:-8080}"]
