@@ -1,0 +1,35 @@
+# VENDORED COPY — do not edit. Regenerate with `make sync-brand` in the
+# dms-tools deploy repo, which copies brand/_brand.yml here. The canonical
+# source and rationale live there.
+
+# Canonical brand definition for the DMS Toolsuite (Posit brand.yml format).
+# Single source of design truth across all three apps. Consumed natively by
+# bslib in the two Shiny apps (R + Python) and compiled into the Tailwind v4
+# `@theme` block + lib/tokens.ts for the React apps.
+#
+# This file is canonical. App repos receive a vendored copy via
+# `make sync-brand` (scripts/sync-brand.sh); do not hand-edit the copies.
+#
+# Colors are hex, NOT oklch(): Bootstrap's Sass color math (tint/shade of
+# $primary) requires a real color, and oklch() would reach Sass as an
+# unparseable function string. Browsers compute the React side from these
+# hex values natively. Hex values were derived from the original OKLCH:
+#   brand       oklch(55% 0.22 265)
+#   brand-light oklch(95% 0.05 265)
+#   brand-dark  oklch(40% 0.22 265)
+meta:
+  name: DMS Toolsuite
+
+color:
+  palette:
+    brand: "#3061EF"
+    brand-light: "#DEEFFF"
+    brand-dark: "#0C2DBB"
+  primary: brand
+
+typography:
+  fonts:
+    - family: Inter
+      source: google
+  base:
+    family: Inter
