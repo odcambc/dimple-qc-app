@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import scipy.stats as stats
 
+from shared import COMPLEMENT
+
 # Aggregation functions
 aggregation_functions = {
     "n_total": ["mean", "std"],
@@ -70,12 +72,45 @@ def compute_effective_entropy(df: pd.DataFrame, bases: np.ndarray | None = None)
     return stats.entropy(filtered, axis=1)
 
 
-def compute_max_non_ref_base(df: pd.DataFrame, bases: np.ndarray | None = None) -> np.ndarray:
-    """Vectorized max non-reference base count."""
+def _extract_ref_base_from_aligned(aligned_val: str) -> str | None:
+    """Extract the true reference base from an aligned_ref value.
+
+    aligned_ref encoding:
+      - plain base char (e.g. 'A') = match
+      - '[X]' = mismatch where X is the ref base
+      - '-' = gap / no-call
+
+    Returns the ref base character, or None for gaps/no-call.
+    """
+    if aligned_val == "-":
+        return None
+    if aligned_val.startswith("[") and aligned_val.endswith("]"):
+        return aligned_val[1:-1]
+    return aligned_val
+
+
+def compute_max_non_ref_base(
+    df: pd.DataFrame,
+    bases: np.ndarray | None = None,
+    ref_bases: np.ndarray | None = None,
+) -> np.ndarray:
+    """Vectorized max non-reference base count.
+
+    Args:
+        df: DataFrame with base count columns A, C, G, T.
+        bases: Optional pre-extracted base count array.
+        ref_bases: Optional array of reference bases per row. When provided,
+            these are used to determine which base to zero out (for aligned
+            reference). When None, falls back to df["ref"].
+    """
     if bases is None:
         bases = df[["A", "C", "G", "T"]].to_numpy()
     base_cols = np.array(["A", "C", "G", "T"])
-    ref_vals = df["ref"].to_numpy()
+
+    if ref_bases is not None:
+        ref_vals = ref_bases
+    else:
+        ref_vals = df["ref"].to_numpy()
 
     # Build a mask where each row's reference base column is True
     ref_mask = ref_vals[:, None] == base_cols[None, :]
@@ -165,12 +200,12 @@ def process_per_base_file(
         per_base_df["pos"] = sequence_length - per_base_df["pos"] + 1
 
         # Reverse complement the bases
-        per_base_df[["A", "C", "G", "T"]] = per_base_df[["T", "G", "C", "A"]]
+        # Use .to_numpy() to force positional assignment; pandas aligns by column label
+        # on DataFrame RHS, which would make this a no-op (A→A, C→C, etc.)
+        per_base_df[["A", "C", "G", "T"]] = per_base_df[["T", "G", "C", "A"]].to_numpy()
 
         # Reverse complement reference base
-        per_base_df["ref"] = per_base_df["ref"].apply(
-            lambda x: {"A": "T", "C": "G", "G": "C", "T": "A"}[x]
-        )
+        per_base_df["ref"] = per_base_df["ref"].map(COMPLEMENT)
 
     return per_base_df
 
@@ -185,11 +220,13 @@ def update_per_base_df(
 
     df = per_base_df.copy()
 
-    # Build a vectorized boolean mask from the list of (start, end) ranges
+    # Build a vectorized boolean mask from the list of (start, end) ranges.
+    # start is 0-based (GenBank), end is half-open. pos is 1-based inclusive.
+    # So: pos >= start + 1 AND pos <= end  (i.e. pos < end + 1)
     mask = pd.Series(False, index=df.index)
     total_selected = 0
     for start, end in selected_range_list:
-        mask |= (df["pos"] >= start) & (df["pos"] < end)
+        mask |= (df["pos"] >= start + 1) & (df["pos"] <= end)
         total_selected += end - start
 
     subpool_codon_fraction = 3 / (total_selected + 1)
@@ -219,13 +256,20 @@ def process_full_mean_values(processed_per_base_df: pd.DataFrame) -> pd.DataFram
             columns=multi_cols,
         )
 
-    # Perform the groupby aggregation
-    full_mean = processed_per_base_df.agg(aggregation_functions)
+    # Aggregate over the full series (no groupby) — produces index ["mean", "std"],
+    # columns = metric names
+    agg_result = processed_per_base_df.agg(aggregation_functions)
 
-    # Now make sure all series are present
-    full_mean = full_mean.reindex(aggregation_columns, fill_value=np.nan)
+    # Build a single-row DataFrame with flattened column names like "n_total_mean"
+    row_data = {}
+    for col in aggregation_columns:
+        for stat in ["mean", "std"]:
+            if stat in agg_result.index and col in agg_result.columns:
+                row_data[f"{col}_{stat}"] = agg_result.loc[stat, col]
+            else:
+                row_data[f"{col}_{stat}"] = np.nan
 
-    return pd.DataFrame(full_mean)
+    return pd.DataFrame([row_data], index=["full"])
 
 
 def update_mean_values_per_base(
@@ -242,7 +286,7 @@ def update_mean_values_per_base(
             columns=multi_cols,
         )
 
-    # Perform the groupby aggregation
+    # Perform the groupby aggregation for selected vs unselected
     means = processed_per_base_df.groupby("is_selected").agg(aggregation_functions)
     means.columns = means.columns.map("_".join)
 
@@ -252,4 +296,16 @@ def update_mean_values_per_base(
     # Now make sure all series are present
     means = means.reindex(["selected", "unselected"], fill_value=np.nan)
 
-    return pd.DataFrame(means)
+    # Also compute full-series means and concatenate
+    agg_result = processed_per_base_df.agg(aggregation_functions)
+    row_data = {}
+    for col in aggregation_columns:
+        for stat in ["mean", "std"]:
+            if stat in agg_result.index and col in agg_result.columns:
+                row_data[f"{col}_{stat}"] = agg_result.loc[stat, col]
+            else:
+                row_data[f"{col}_{stat}"] = np.nan
+    full_mean = pd.DataFrame([row_data], index=["full"])
+
+    # Unified frame indexed ["selected", "unselected", "full"]
+    return pd.concat([means, full_mean])

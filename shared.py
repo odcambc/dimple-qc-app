@@ -1,6 +1,13 @@
 from pathlib import Path
 
 app_dir = Path(__file__).parent
+
+COMPLEMENT = {"A": "T", "C": "G", "G": "C", "T": "A"}
+
+
+def reverse_complement_sequence(seq: str) -> str:
+    """Reverse-complement a DNA sequence string."""
+    return "".join(COMPLEMENT.get(base, base) for base in reversed(seq))
 # example_df = pd.read_csv(app_dir / "FKYSRV_1_PXR2.tsv")
 example_per_base_tsv = app_dir / "FKYSRV_1_PXR2.tsv"
 example_reference_fasta = app_dir / "FKYSRV_1_PXR2.fasta"
@@ -18,7 +25,7 @@ column_names_dict = {
     "deletions": "Deletion count",
     "indel_fraction": "Indel fraction",
     "indel_substitution_ratio": "Indel to substitution ratio",
-    "alignment_mismatch": "red",
+    "alignment_mismatch": "Alignment mismatch",
     "max_variant_base": "Max counts non-ref base",
     "is_selected": "Is selected",
 }
@@ -36,7 +43,24 @@ column_colors_dict = {
     "indel_fraction": "blue",
     "indel_substitution_ratio": "purple",
     "max_variant_base": "green",
+    "alignment_mismatch": "red",
 }
+
+# Series that are meaningful to plot against position (excludes boolean/internal columns)
+plottable_series = [
+    "entropy",
+    "effective_entropy",
+    "percent_of_max_entropy",
+    "n_total",
+    "n_variants",
+    "variant_fraction",
+    "variant_fraction_percent",
+    "insertions",
+    "deletions",
+    "indel_fraction",
+    "indel_substitution_ratio",
+    "max_variant_base",
+]
 
 # Define the tooltips for each option
 column_tooltips = {

@@ -1,5 +1,8 @@
 from Bio import Align, SeqIO
+import numpy as np
 import pandas as pd
+
+from process_data import _extract_ref_base_from_aligned, compute_max_non_ref_base
 
 
 def align_ref_to_variants(
@@ -13,17 +16,21 @@ def align_ref_to_variants(
 
     df_ref_sequence = "".join(per_base_df["ref"])
 
-    aligner = Align.PairwiseAligner()
-    aligner.mode = "global"
-    aligner.match_score = 1
-    aligner.mismatch_score = 0
-    aligner.open_gap_score = 0
-    aligner.extend_gap_score = 0
+    try:
+        aligner = Align.PairwiseAligner()
+        aligner.mode = "global"
+        aligner.match_score = 2
+        aligner.mismatch_score = -1
+        aligner.open_gap_score = -10
+        aligner.extend_gap_score = -0.5
 
-    alignments = aligner.align(reference_sequence, df_ref_sequence)
+        alignments = aligner.align(reference_sequence, df_ref_sequence)
 
-    if alignments:
-        best_alignment = alignments[0]
+        try:
+            best_alignment = alignments[0]
+        except (IndexError, OverflowError):
+            return per_base_df
+
         ref_aligned = str(best_alignment[0])
         df_aligned = str(best_alignment[1])
 
@@ -57,6 +64,18 @@ def align_ref_to_variants(
         if len(adjusted_aligned_seq) == len(per_base_df):
             per_base_df["aligned_ref"] = adjusted_aligned_seq
             per_base_df["alignment_mismatch"] = mismatch_flags
+
+            # Recompute max_variant_base from the aligned reference
+            bases = per_base_df[["A", "C", "G", "T"]].to_numpy()
+            ref_bases = np.array([
+                _extract_ref_base_from_aligned(v) or ""
+                for v in adjusted_aligned_seq
+            ])
+            per_base_df["max_variant_base"] = compute_max_non_ref_base(
+                per_base_df, bases=bases, ref_bases=ref_bases
+            )
+    except Exception:
+        pass
 
     return per_base_df
 

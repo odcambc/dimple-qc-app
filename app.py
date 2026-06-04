@@ -28,6 +28,8 @@ from shared import (
     column_colors_dict,
     column_names_dict,
     column_tooltips,
+    plottable_series,
+    reverse_complement_sequence,
     tabular_cols,
 )
 
@@ -62,17 +64,19 @@ def format_mean_metric(means: pd.DataFrame, col: str, as_int: bool = False) -> s
         or "selected" not in means.index
         or pd.isna(means.at["selected", col])
     ):
-        return "0"
+        return "—"
 
     selected = means.at["selected", col]
-    if "unselected" in means.index and not pd.isna(means.at["unselected", col]):
-        unselected = means.at["unselected", col]
+    if "full" in means.index and not pd.isna(means.at["full", col]):
+        full = means.at["full", col]
+    elif "unselected" in means.index and not pd.isna(means.at["unselected", col]):
+        full = means.at["unselected", col]
     else:
-        unselected = selected
+        full = selected
 
     if as_int:
-        return f"{int(unselected)} ({int(selected)} in selected)"
-    return f"{unselected:.2f} ({selected:.2f} in selected)"
+        return f"{int(full)} ({int(selected)} in selected)"
+    return f"{full:.2f} ({selected:.2f} in selected)"
 
 ui.page_opts(title="DIMPLE quick QC", fillable=True)
 ui.include_css("styles.css")
@@ -150,7 +154,10 @@ def base_processed_data():
     data = process_per_base_file(parsed, input.reverse_complement(), input.origin_shift())
     ref = parsed_reference()
     if ref and ref.get("sequence"):
-        data = align_ref_to_variants(data, ref["sequence"])
+        ref_seq = ref["sequence"]
+        if input.reverse_complement():
+            ref_seq = reverse_complement_sequence(ref_seq)
+        data = align_ref_to_variants(data, ref_seq)
     return data
 
 
@@ -211,7 +218,7 @@ with ui.sidebar(title="Settings"):
         "Display",
         {
             key: checkbox_with_tooltip(key, column_names_dict, column_tooltips)
-            for key in column_tooltips
+            for key in plottable_series
         },
     )
     # Input files
@@ -300,8 +307,15 @@ with ui.sidebar(title="Settings"):
             last_selected_series(),
             input.show_means(),
             feature_regions_for_plot(),
+            normalize=input.normalize_plot(),
         )
-        yield fig.to_image(format="png")
+        try:
+            yield fig.to_image(format="png")
+        except Exception:
+            ui.notification_show(
+                "PNG export requires the 'kaleido' package. Install with: pip install kaleido"
+            )
+            yield b""
 
     @render.download(
         filename="position_plot.html",
@@ -321,6 +335,7 @@ with ui.sidebar(title="Settings"):
             last_selected_series(),
             input.show_means(),
             feature_regions_for_plot(),
+            normalize=input.normalize_plot(),
         )
         yield fig.to_html(include_plotlyjs="cdn").encode()
 
@@ -336,6 +351,7 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                     base_processed_data,
                     input.data_series,
                     last_selected_series,
+                    input.normalize_plot,
                     feature_regions_for_plot,
                 )
                 def plotly_position_plot():
@@ -350,6 +366,7 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                             0,
                             last_selected_series(),
                             input.show_means(),
+                            normalize=input.normalize_plot(),
                         )
                     pos_plot = base_position_vs_value_plot_plotly(
                         data,
@@ -361,6 +378,7 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
                         last_selected_series(),
                         input.show_means(),
                         feature_regions_for_plot(),
+                        normalize=input.normalize_plot(),
                     )
 
                     return pos_plot
@@ -408,6 +426,7 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
     # Top summary fields
     with ui.card():
         ui.input_switch("show_means", "Show means")
+        ui.input_switch("normalize_plot", "Normalize series (0–1)")
 
         with ui.value_box():
             "Average reads per base"

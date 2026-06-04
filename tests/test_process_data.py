@@ -132,6 +132,22 @@ class TestProcessPerBaseFile:
         rev_last_ref = result_rev.iloc[-1]["ref"]
         assert rev_last_ref == complement[fwd_first_ref]
 
+    def test_reverse_complement_swaps_base_counts(self, minimal_per_base_df):
+        """Verify that RC actually swaps A/C/G/T counts (pandas label-alignment bug)."""
+        result_fwd = process_per_base_file(minimal_per_base_df, False)
+        result_rev = process_per_base_file(minimal_per_base_df, True)
+
+        # The first row of the forward result should correspond to the last row
+        # of the reverse result (positions are reversed). The base counts must
+        # be complemented: A↔T, C↔G.
+        fwd_first = result_fwd.iloc[0]
+        rev_last = result_rev.iloc[-1]
+
+        assert rev_last["A"] == fwd_first["T"]
+        assert rev_last["T"] == fwd_first["A"]
+        assert rev_last["C"] == fwd_first["G"]
+        assert rev_last["G"] == fwd_first["C"]
+
 
 class TestUpdatePerBaseDf:
     def test_does_not_mutate_input(self, minimal_per_base_df):
@@ -148,20 +164,22 @@ class TestUpdatePerBaseDf:
     def test_selection_range(self, minimal_per_base_df):
         processed = process_per_base_file(minimal_per_base_df, False)
         result = update_per_base_df(processed, [(2, 4)])
-        # Positions 2, 3 should be selected; 1, 4, 5, 6 should not
+        # Ranges use the GenBank/slider convention: start is 0-based, end is
+        # inclusive of the 1-based position. So (2, 4) selects positions 3, 4.
         selected_pos = result[result["is_selected"]]["pos"].tolist()
-        assert 2 in selected_pos
         assert 3 in selected_pos
-        assert 1 not in selected_pos
-        assert 4 not in selected_pos
+        assert 4 in selected_pos
+        assert 2 not in selected_pos
+        assert 5 not in selected_pos
 
     def test_multiple_ranges(self, minimal_per_base_df):
         processed = process_per_base_file(minimal_per_base_df, False)
         result = update_per_base_df(processed, [(1, 2), (5, 6)])
+        # (1, 2) -> position 2; (5, 6) -> position 6 (0-based start, inclusive end)
         selected_pos = result[result["is_selected"]]["pos"].tolist()
-        assert 1 in selected_pos
-        assert 5 in selected_pos
-        assert 3 not in selected_pos
+        assert 2 in selected_pos
+        assert 6 in selected_pos
+        assert 4 not in selected_pos
 
     def test_empty_input(self):
         result = update_per_base_df(pd.DataFrame(), [(1, 5)])

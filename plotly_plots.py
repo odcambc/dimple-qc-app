@@ -19,6 +19,7 @@ def base_position_vs_value_plot_plotly(
     last_selected_series: str,
     show_means: bool,
     feature_regions: list[dict] | None = None,
+    normalize: bool = False,
 ) -> go.Figure:
     if per_base_df.empty:
         return _empty_fig()
@@ -31,10 +32,18 @@ def base_position_vs_value_plot_plotly(
 
     fig = go.Figure(layout=dict(template="simple_white"))
     for field in displayed_fields:
+        y_values = per_base_df[field]
+        if normalize:
+            col_min = y_values.min()
+            col_max = y_values.max()
+            if col_max > col_min:
+                y_values = (y_values - col_min) / (col_max - col_min)
+            else:
+                y_values = y_values * 0  # all same value → flat at 0
         fig.add_trace(
             go.Scattergl(
                 x=per_base_df["pos"],
-                y=per_base_df[field],
+                y=y_values,
                 mode="markers",
                 name=field,
             )
@@ -42,7 +51,7 @@ def base_position_vs_value_plot_plotly(
     fig.update_layout(
         title="Position vs Value",
         xaxis_title="Position",
-        yaxis_title="Value",
+        yaxis_title="Value" if not normalize else "Normalized (0–1)",
         xaxis=dict(range=range),
         uirevision="position-plot",
     )
