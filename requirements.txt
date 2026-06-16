@@ -682,9 +682,9 @@ python-dateutil==2.9.0.post0 \
     #   matplotlib
     #   pandas
     #   shinywidgets
-python-multipart==0.0.27 ; sys_platform != 'emscripten' \
-    --hash=sha256:6fccfad17a27334bd0193681b369f476eda3409f17381a2d65aa7df3f7275645 \
-    --hash=sha256:9870a6a8c5a20a5bf4f07c017bd1489006ff8836cff097b6933355ee2b49b602
+python-multipart==0.0.31 ; sys_platform != 'emscripten' \
+    --hash=sha256:8408153d68a9773291fc1da39a8b85a50044bddbabd2dd72e9229776b7b15e28 \
+    --hash=sha256:fc631183bb13e56db3158a4909908dfb2e23565286744e798241e63750e5d680
     # via shiny
 questionary==2.1.1 ; sys_platform != 'emscripten' \
     --hash=sha256:3d7e980292bb0107abaa79c68dd3eee3c561b83a0f89ae482860b181c8bd412d \
