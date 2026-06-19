@@ -5,7 +5,6 @@
 .devcontainer
 .github
 deploy
-uv.lock
 __pycache__
 *.py[cod]
 .pytest_cache
@@ -24,7 +23,11 @@ conftest.py
 scratch.py
 per_base_df.csv
 notes
+# Exclude the bulky example datasets, but keep the two files the in-app
+# "Load example data" button reads at runtime (see shared.py).
 examples
+!examples/FKYSRV_1_PXR2.tsv
+!examples/FKYSRV_1_PXR2.fasta
 rsconnect-python
 *.md
 LICENSE
