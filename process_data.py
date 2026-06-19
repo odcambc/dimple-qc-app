@@ -218,30 +218,29 @@ def update_per_base_df(
     if per_base_df.empty:
         return per_base_df
 
-    df = per_base_df.copy()
-
     # Build a vectorized boolean mask from the list of (start, end) ranges.
     # start is 0-based (GenBank), end is half-open. pos is 1-based inclusive.
     # So: pos >= start + 1 AND pos <= end  (i.e. pos < end + 1)
-    mask = pd.Series(False, index=df.index)
+    mask = pd.Series(False, index=per_base_df.index)
     total_selected = 0
     for start, end in selected_range_list:
-        mask |= (df["pos"] >= start + 1) & (df["pos"] <= end)
+        mask |= (per_base_df["pos"] >= start + 1) & (per_base_df["pos"] <= end)
         total_selected += end - start
 
     subpool_codon_fraction = 3 / (total_selected + 1)
 
-    df["is_selected"] = mask
-
-    df["expected_variant_codons"] = (
-        subpool_codon_fraction * df["n_total"]
+    # Only these 3 columns vary with the selected range. Use .assign() rather than
+    # copying the whole frame: it returns a new frame, never mutates the input
+    # (preserving the cached base_processed_data() frame), and under pandas 3.0
+    # Copy-on-Write the untouched columns are shared, not duplicated. This is the
+    # hot path while dragging the range slider, so avoiding a full-frame copy matters.
+    return per_base_df.assign(
+        is_selected=mask,
+        expected_variant_codons=subpool_codon_fraction * per_base_df["n_total"],
+        variant_fraction_percent=(
+            (4 / 3) * per_base_df["variant_fraction"] / subpool_codon_fraction
+        ).replace([np.inf, -np.inf], np.nan),
     )
-
-    df["variant_fraction_percent"] = (
-        (4 / 3) * df["variant_fraction"] / subpool_codon_fraction
-    ).replace([np.inf, -np.inf], np.nan)
-
-    return df
 
 
 def process_full_mean_values(processed_per_base_df: pd.DataFrame) -> pd.DataFrame:

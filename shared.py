@@ -8,9 +8,9 @@ COMPLEMENT = {"A": "T", "C": "G", "G": "C", "T": "A"}
 def reverse_complement_sequence(seq: str) -> str:
     """Reverse-complement a DNA sequence string."""
     return "".join(COMPLEMENT.get(base, base) for base in reversed(seq))
-# example_df = pd.read_csv(app_dir / "FKYSRV_1_PXR2.tsv")
-example_per_base_tsv = app_dir / "FKYSRV_1_PXR2.tsv"
-example_reference_fasta = app_dir / "FKYSRV_1_PXR2.fasta"
+# Bundled example data lives under examples/ (see app's "Load example data" action).
+example_per_base_tsv = app_dir / "examples" / "FKYSRV_1_PXR2.tsv"
+example_reference_fasta = app_dir / "examples" / "FKYSRV_1_PXR2.fasta"
 
 # Define the columns to show in the plot
 column_names_dict = {

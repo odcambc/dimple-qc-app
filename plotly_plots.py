@@ -1,12 +1,33 @@
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-def _empty_fig() -> go.Figure:
+from shared import column_colors_dict, column_names_dict
+
+
+def _empty_fig(message: str | None = None) -> go.Figure:
     # Return a fresh figure each call so per-session mutations cannot leak across users.
-    return go.Figure().update_layout(template="simple_white")
+    fig = go.Figure().update_layout(template="simple_white")
+    if message:
+        # Centered prompt in place of an axis-only blank canvas (first-run empty state).
+        fig.add_annotation(
+            text=message,
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            align="center",
+            font=dict(size=15, color="#666"),
+        )
+        fig.update_layout(
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+        )
+    return fig
 
 
 def base_position_vs_value_plot_plotly(
@@ -22,13 +43,30 @@ def base_position_vs_value_plot_plotly(
     normalize: bool = False,
 ) -> go.Figure:
     if per_base_df.empty:
-        return _empty_fig()
+        return _empty_fig(
+            "Upload per-base sequencing data (TSV) to begin,<br>"
+            "or click <b>Load example data</b> in the sidebar."
+        )
     if not displayed_fields:
-        return _empty_fig()
+        return _empty_fig("Select at least one metric under <b>Display</b> to plot.")
     if not range:
         range = [0, per_base_df["pos"].max()]
     if "pos" not in per_base_df.columns:
         return _empty_fig()
+
+    # Shared hover context: selected/unselected state and the reference base per position.
+    sel_state = (
+        per_base_df["is_selected"].map({True: "Selected", False: "Unselected"})
+        if "is_selected" in per_base_df.columns
+        else pd.Series([""] * len(per_base_df), index=per_base_df.index)
+    )
+    if "aligned_ref" in per_base_df.columns:
+        ref_base = per_base_df["aligned_ref"]
+    elif "ref" in per_base_df.columns:
+        ref_base = per_base_df["ref"]
+    else:
+        ref_base = pd.Series([""] * len(per_base_df), index=per_base_df.index)
+    customdata = np.column_stack([sel_state.to_numpy(), ref_base.to_numpy()])
 
     fig = go.Figure(layout=dict(template="simple_white"))
     for field in displayed_fields:
@@ -40,16 +78,35 @@ def base_position_vs_value_plot_plotly(
                 y_values = (y_values - col_min) / (col_max - col_min)
             else:
                 y_values = y_values * 0  # all same value → flat at 0
+        display_name = column_names_dict.get(field, field)
         fig.add_trace(
             go.Scattergl(
                 x=per_base_df["pos"],
                 y=y_values,
                 mode="markers",
-                name=field,
+                name=display_name,
+                marker=dict(color=column_colors_dict.get(field)),
+                customdata=customdata,
+                hovertemplate=(
+                    f"<b>{display_name}</b><br>"
+                    "Position %{x}<br>"
+                    "Value %{y:.3g}<br>"
+                    "Ref %{customdata[1]} · %{customdata[0]}"
+                    "<extra></extra>"
+                ),
             )
         )
+
+    # Contextual title reflecting what is actually plotted.
+    if len(displayed_fields) == 1:
+        title = f"{column_names_dict.get(displayed_fields[0], displayed_fields[0])} by position"
+    else:
+        title = "Per-position metrics"
+    if normalize:
+        title += " — normalized 0–1 per metric"
+
     fig.update_layout(
-        title="Position vs Value",
+        title=title,
         xaxis_title="Position",
         yaxis_title="Value" if not normalize else "Normalized (0–1)",
         xaxis=dict(range=range),
