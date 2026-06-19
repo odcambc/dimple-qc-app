@@ -1,9 +1,12 @@
 import pandas as pd
 import plotly.graph_objects as go
 
+from pathlib import Path
+
 from shiny import reactive
 from shiny.express import input, render, ui
 from shiny.types import FileInfo
+from shiny.ui import Theme
 
 from shinywidgets import render_plotly
 
@@ -78,7 +81,12 @@ def format_mean_metric(means: pd.DataFrame, col: str, as_int: bool = False) -> s
         return f"{int(full)} ({int(selected)} in selected)"
     return f"{full:.2f} ({selected:.2f} in selected)"
 
-ui.page_opts(title="DIMPLE quick QC", fillable=True)
+# Theme from the suite-wide brand (vendored _brand.yml; see dms-tools brand/).
+ui.page_opts(
+    title="DIMPLE quick QC",
+    fillable=True,
+    theme=Theme.from_brand(Path(__file__).parent / "_brand.yml"),
+)
 ui.include_css("styles.css")
 
 

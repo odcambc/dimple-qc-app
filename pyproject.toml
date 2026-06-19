@@ -13,7 +13,7 @@ dependencies = [
     "plotly>=6.6.0",
     "scipy>=1.17.1",
     "seaborn>=0.13.2",
-    "shiny>=1.6.0",
+    "shiny[theme]>=1.6.0",  # 'theme' extra: brand_yml + libsass, for Theme.from_brand
     "shinywidgets>=0.7.1",
     "statsmodels>=0.14.6",
 ]
