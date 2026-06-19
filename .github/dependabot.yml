@@ -1,0 +1,25 @@
+# Dependabot configuration.
+# uv.lock is the single source of truth for dependencies (the Docker image and
+# `uv sync` both read it; there is no checked-in requirements.txt). Pinning the
+# `uv` ecosystem makes Dependabot update pyproject.toml / uv.lock directly,
+# instead of editing a derived export and drifting out of sync.
+version: 2
+updates:
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+    # Collapse routine minor/patch bumps into one weekly PR to cut review noise.
+    # Major bumps still arrive as individual PRs, and security updates open
+    # immediately regardless of this schedule.
+    groups:
+      python-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
