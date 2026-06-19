@@ -1,3 +1,5 @@
+import time
+
 import pandas as pd
 import plotly.graph_objects as go
 
@@ -28,6 +30,8 @@ from shared import (
     column_colors_dict,
     column_names_dict,
     column_tooltips,
+    example_per_base_tsv,
+    example_reference_fasta,
     plottable_series,
     reverse_complement_sequence,
     tabular_cols,
@@ -42,6 +46,52 @@ from process_reference import (
 from validation import validate_per_base_file
 
 
+
+
+def reactive_debounce(value_fn, delay_secs):
+    """Per-session debounce: a reactive.calc yielding value_fn()'s latest value,
+    but only after value_fn has been stable for delay_secs.
+
+    NOTE on the module-level-state convention: this creates reactive.value()s, which
+    CLAUDE.md generally forbids at module scope. That rule guards against state shared
+    across sessions, which happens for *imported* modules (import-cached once). app.py is
+    different: Shiny Express re-executes this file's body per session
+    (shiny/express/_run.py -> run_express), so these reactive.value()s are per-session and
+    do NOT leak across users. Kept local to app.py for exactly that reason.
+    """
+    when = reactive.value(None)  # epoch time at which to commit, or None
+    trigger = reactive.value(0)
+
+    @reactive.effect
+    def _on_change():
+        value_fn()  # take a reactive dependency on the source
+        when.set(time.time() + delay_secs)
+
+    @reactive.effect
+    def _on_timer():
+        w = when()
+        if w is None:
+            return
+        now = time.time()
+        if now >= w:
+            with reactive.isolate():
+                when.set(None)
+                trigger.set(trigger() + 1)
+        else:
+            reactive.invalidate_later(w - now)
+
+    @reactive.calc
+    def _debounced():
+        trigger()  # re-evaluate only when a settled value is committed
+        with reactive.isolate():
+            return value_fn()
+
+    return _debounced
+
+
+# Debounced view of the range slider. The dashed selection lines still track the slider
+# live (see update_position_plot_shapes); only the heavy recompute chain reads this.
+pos_range_debounced = reactive_debounce(lambda: input.pos_range(), 0.3)
 
 
 @reactive.calc
@@ -100,12 +150,43 @@ def checkbox_with_tooltip(key, names, tooltips):
 # These calcs must be defined before the UI block because they are referenced
 # as arguments to @reactive.event decorators, which are evaluated at definition time.
 @reactive.calc
+def per_base_input() -> list[FileInfo] | None:
+    """Resolve the active per-base file source.
+
+    An explicit upload always wins; otherwise, once the user has clicked
+    "Load example data", fall back to the bundled example TSV. Returning a
+    FileInfo-shaped list keeps the rest of the pipeline agnostic about whether
+    data came from an upload or the example. This is a per-session calc (no
+    module-level state), preserving session isolation.
+    """
+    uploaded = input.per_base_file()
+    if uploaded is not None:
+        return uploaded
+    if input.load_example() > 0:
+        return [{"name": example_per_base_tsv.name, "datapath": str(example_per_base_tsv)}]
+    return None
+
+
+@reactive.calc
+def reference_input() -> list[FileInfo] | None:
+    """Resolve the active reference file source (upload wins, else the example)."""
+    uploaded = input.reference_file()
+    if uploaded is not None:
+        return uploaded
+    if input.load_example() > 0:
+        return [
+            {"name": example_reference_fasta.name, "datapath": str(example_reference_fasta)}
+        ]
+    return None
+
+
+@reactive.calc
 def parsed_reference() -> dict[str, dict | None] | None:
     """Parse reference file (FASTA or GenBank) and return dict with sequence string and
     feature objects (if present). If no feature objects are present, the "feature" value
     is None. Returns None if no file is uploaded or if the file is not a valid fasta or
     genbank file."""
-    file = input.reference_file()
+    file = reference_input()
     if file is None:
         return None
     if file[0]["name"].endswith((".fa", ".fasta")):
@@ -120,7 +201,7 @@ def parsed_reference() -> dict[str, dict | None] | None:
 @reactive.calc
 def parsed_per_base_file():
     """Parse input per-base sequencing file."""
-    file: list[FileInfo] | None = input.per_base_file()
+    file: list[FileInfo] | None = per_base_input()
     if file is None:
         return pd.DataFrame()
     try:
@@ -197,46 +278,30 @@ def feature_regions_for_plot() -> list[dict]:
 
 # Sidebar layout
 with ui.sidebar(title="Settings"):
-    ui.input_slider(
-        "pos_range",
-        "Selected range:",
-        min=0,
-        max=100,
-        value=[0, 100],
-        step=1,
-    )
-
-    # Checkbox for reverse complementing per-base file
-    ui.input_switch("reverse_complement", "Reverse complement")
-
-    # Numeric input for origin shift
-    ui.input_numeric("origin_shift", "Origin shift (bp)", value=0, min=0, step=1)
-
-    # Render the checkbox group with tooltips
-    ui.input_checkbox_group(
-        "data_series",
-        "Display",
-        {
-            key: checkbox_with_tooltip(key, column_names_dict, column_tooltips)
-            for key in plottable_series
-        },
-    )
-    # Input files
+    # --- 1. Data input ---
     ui.input_file(
         "per_base_file",
         "Upload sequencing data",
         accept=[".csv", ".tsv"],
         multiple=False,
     )
+    ui.input_action_button(
+        "load_example",
+        "Load example data",
+        class_="btn-sm btn-outline-secondary",
+    )
+    ui.help_text("No file yet? Load a bundled example library to explore the app.")
+
+    # --- 2. Reference input (optional) ---
     ui.input_file(
         "reference_file",
-        "Upload reference sequence",
+        "Upload reference sequence (optional)",
         accept=[".fa", ".fasta", ".gb", ".genbank", ".gbk"],
         multiple=False,
     )
 
-    # Add a selectize input for identified features in parsed genbank file.
-    # Only show if a genbank file is uploaded.
+    # Selectize for features parsed from a GenBank reference.
+    # Only shown when a GenBank file provides features.
     @render.ui
     def feature_select():
         if parsed_reference() is None:
@@ -265,79 +330,118 @@ with ui.sidebar(title="Settings"):
         )
 
     ui.hr()
-    "Download:"
 
-    @render.download(
-        filename="per_base_data.csv", media_type="text/csv", label="Per-base data"
+    # --- 3. Selection ---
+    ui.input_slider(
+        "pos_range",
+        "Selected range:",
+        min=0,
+        max=100,
+        value=[0, 100],
+        step=1,
     )
-    def download_per_base_csv():
-        """Download per-base data as CSV."""
-        df = processed_per_base_file()
-        if df.empty:
-            yield ""
-            return
-        yield df[tabular_cols].to_csv(index=False)
 
-    @render.download(
-        filename="test_results.csv", media_type="text/csv", label="Test results"
+    # --- 4. Metric display ---
+    ui.input_checkbox_group(
+        "data_series",
+        "Display",
+        {
+            key: checkbox_with_tooltip(key, column_names_dict, column_tooltips)
+            for key in plottable_series
+        },
     )
-    def download_test_csv():
-        """Download statistical test results as CSV."""
-        df = test_results()
-        if df.empty:
-            yield ""
-            return
-        yield df.to_csv()
 
-    @render.download(
-        filename="position_plot.png",
-        media_type="image/png",
-        label="Position plot (PNG)",
-    )
-    def download_plot_png():
-        """Download position plot as PNG."""
-        data = processed_per_base_file()
-        fig = base_position_vs_value_plot_plotly(
-            data,
-            mean_values_per_base(),
-            input.data_series(),
-            [0, int(data["pos"].max()) if not data.empty else 0],
-            input.pos_range()[0],
-            input.pos_range()[1],
-            last_selected_series(),
-            input.show_means(),
-            feature_regions_for_plot(),
-            normalize=input.normalize_plot(),
+    ui.hr()
+
+    # --- 5. Advanced / reference alignment ---
+    ui.input_switch("reverse_complement", "Reverse complement")
+    ui.input_numeric("origin_shift", "Origin shift (bp)", value=0, min=0, step=1)
+
+    ui.hr()
+    "Export:"
+
+    # Drives the conditional display of the download buttons (hidden output;
+    # see #export_ready in styles.css). Downloads are gated until data exists.
+    @render.text
+    def export_ready():
+        return "true" if not base_processed_data().empty else "false"
+
+    with ui.panel_conditional("output.export_ready !== 'true'"):
+        ui.help_text("Load data to enable downloads.")
+
+    with ui.panel_conditional("output.export_ready === 'true'"):
+
+        @render.download(
+            filename="per_base_data.csv", media_type="text/csv", label="Per-base data"
         )
-        try:
-            yield fig.to_image(format="png")
-        except Exception:
-            ui.notification_show(
-                "PNG export requires the 'kaleido' package. Install with: pip install kaleido"
+        def download_per_base_csv():
+            """Download per-base data as CSV."""
+            df = processed_per_base_file()
+            if df.empty:
+                yield ""
+                return
+            yield df[tabular_cols].to_csv(index=False)
+
+        @render.download(
+            filename="test_results.csv", media_type="text/csv", label="Test results"
+        )
+        def download_test_csv():
+            """Download statistical test results as CSV."""
+            df = test_results()
+            if df.empty:
+                yield ""
+                return
+            yield df.to_csv()
+
+        @render.download(
+            filename="position_plot.png",
+            media_type="image/png",
+            label="Position plot (PNG)",
+        )
+        def download_plot_png():
+            """Download position plot as PNG."""
+            data = processed_per_base_file()
+            fig = base_position_vs_value_plot_plotly(
+                data,
+                mean_values_per_base(),
+                input.data_series(),
+                [0, int(data["pos"].max()) if not data.empty else 0],
+                input.pos_range()[0],
+                input.pos_range()[1],
+                last_selected_series(),
+                input.show_means(),
+                feature_regions_for_plot(),
+                normalize=input.normalize_plot(),
             )
-            yield b""
+            try:
+                yield fig.to_image(format="png")
+            except Exception:
+                ui.notification_show(
+                    "PNG export requires the 'kaleido' package. Install with: pip install kaleido"
+                )
+                yield b""
 
-    @render.download(
-        filename="position_plot.html",
-        media_type="text/html",
-        label="Position plot (HTML)",
-    )
-    def download_plot_html():
-        """Download position plot as interactive HTML."""
-        data = processed_per_base_file()
-        fig = base_position_vs_value_plot_plotly(
-            data,
-            mean_values_per_base(),
-            input.data_series(),
-            [0, int(data["pos"].max()) if not data.empty else 0],
-            input.pos_range()[0],
-            input.pos_range()[1],
-            last_selected_series(),
-            input.show_means(),
-            feature_regions_for_plot(),
-            normalize=input.normalize_plot(),
+        @render.download(
+            filename="position_plot.html",
+            media_type="text/html",
+            label="Position plot (HTML)",
         )
-        yield fig.to_html(include_plotlyjs="cdn").encode()
+        def download_plot_html():
+            """Download position plot as interactive HTML."""
+            data = processed_per_base_file()
+            fig = base_position_vs_value_plot_plotly(
+                data,
+                mean_values_per_base(),
+                input.data_series(),
+                [0, int(data["pos"].max()) if not data.empty else 0],
+                input.pos_range()[0],
+                input.pos_range()[1],
+                last_selected_series(),
+                input.show_means(),
+                feature_regions_for_plot(),
+                normalize=input.normalize_plot(),
+            )
+            yield fig.to_html(include_plotlyjs="cdn").encode()
 
 
 # Main content area
@@ -409,7 +513,7 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
             @render_plotly
             @reactive.event(
-                input.pos_range,
+                pos_range_debounced,
                 input.data_series,
                 last_selected_series,
             )
@@ -463,10 +567,10 @@ with ui.layout_columns(columns=2, col_widths=[9, 3]):
 
 
 @reactive.effect
-@reactive.event(input.per_base_file)
+@reactive.event(per_base_input)
 def initialize_series_selection():
-    """Initialize displayed metric selection once per upload."""
-    if input.per_base_file() is None:
+    """Initialize displayed metric selection once per upload (or example load)."""
+    if per_base_input() is None:
         return
     ui.update_checkbox_group("data_series", selected=["entropy"])
 
@@ -478,7 +582,8 @@ def processed_per_base_file():
     if data.empty:
         return pd.DataFrame()
 
-    data = update_per_base_df(data, [(input.pos_range()[0], input.pos_range()[1])])
+    low, high = pos_range_debounced()
+    data = update_per_base_df(data, [(low, high)])
 
     ref = parsed_reference()
     if ref and ref["features"] and input.selected_features():
@@ -523,7 +628,7 @@ def test_results():
 @reactive.event(sequence_length)
 def update_pos_range():
     """Update slider bounds and reset value when a new file is loaded."""
-    if input.per_base_file() is not None:
+    if per_base_input() is not None:
         seq_len = sequence_length()
         ui.update_slider("pos_range", min=0, max=seq_len, value=[0, seq_len])
 

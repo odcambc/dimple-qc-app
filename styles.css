@@ -2,6 +2,11 @@
   --bslib-sidebar-main-bg: #f8f8f8;
 }
 
+/* Hidden flag output that drives the Export panel_conditional in the sidebar. */
+#export_ready {
+  display: none;
+}
+
 .tooltip-container {
   position: relative;
   display: inline-block;
