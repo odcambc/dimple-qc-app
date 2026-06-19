@@ -53,12 +53,16 @@ uv run shiny run
 
 ### Install with pip
 
+This project uses `uv` as the single source of truth for dependencies
+(`pyproject.toml` + `uv.lock`); there is no checked-in `requirements.txt`. If you
+need a pip-installable requirements file for a constrained environment, generate
+one on demand from the lockfile:
+
 ```bash
+uv export --format requirements.txt > requirements.txt
 pip install -r requirements.txt
 shiny run app.py
 ```
-
-> `requirements.txt` is generated from `pyproject.toml` via `uv export`. If you add or change dependencies, edit `pyproject.toml` and regenerate with `uv export --format requirements.txt > requirements.txt`.
 
 ### Install with Docker
 
